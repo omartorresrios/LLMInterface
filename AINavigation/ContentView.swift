@@ -10,18 +10,71 @@ import SwiftUI
 struct ChatViewModel: Identifiable {
 	let id = UUID()
 	var position: CGSize
-	var selectedQuestionIndex: Int?
 	var cards: [Card]
+}
+
+enum Edge {
+	case topLeft, topRight, bottomLeft, bottomRight
+}
+
+struct ResizeHandles: View {
+	@Binding var size: CGSize
+	
+	var body: some View {
+		ZStack {
+			ResizeHandle { dx, dy in
+				size.width = max(400, size.width + dx)
+				size.height = max(300, size.height + dy)
+			}
+			.position(x: size.width - 10, y: size.height - 10) // Position at bottom right
+			
+			ResizeHandle { dx, dy in
+				size.width = max(400, size.width - dx)
+				size.height = max(300, size.height + dy)
+			}
+			.position(x: 10, y: size.height - 10) // Position at bottom left
+			
+			ResizeHandle { dx, dy in
+				size.width = max(400, size.width + dx)
+				size.height = max(300, size.height - dy)
+			}
+			.position(x: size.width - 10, y: 10) // Position at top right
+			
+			ResizeHandle { dx, dy in
+				size.width = max(400, size.width - dx)
+				size.height = max(300, size.height - dy)
+			}
+			.position(x: 10, y: 10) // Position at top left
+		}
+	}
+}
+
+struct ResizeHandle: View {
+	let onResize: (CGFloat, CGFloat) -> Void
+	
+	var body: some View {
+		Rectangle()
+			.fill(Color.blue.opacity(0.5))
+			.frame(width: 20, height: 20)
+			.gesture(
+				DragGesture(minimumDistance: 0)
+					.onChanged { value in
+						onResize(value.translation.width, value.translation.height)
+					}
+			)
+	}
 }
 
 struct DraggableChatView: View {
 	@Binding var position: CGSize
-	@Binding var selectedQuestionIndex: Int?
+	@State var selectedQuestionIndex: Int?
 	@Binding var cards: [Card]
 	@State private var expandedCardIndices: Set<Int> = []
 	@State private var dragOffset = CGSize.zero
 	@State private var isSidebarVisible: Bool = true
 	var onClose: () -> Void
+	
+	@State private var size: CGSize = CGSize(width: 800, height: 600)
 	
 	private var screenHeight: CGFloat {
 		NSScreen.main?.frame.height ?? 1000
@@ -35,7 +88,7 @@ struct DraggableChatView: View {
 		ZStack(alignment: .topLeading) {
 			RoundedRectangle(cornerRadius: 16)
 				.fill(Color.gray.opacity(0.2))
-				.frame(width: 800, height: min(600, maxBoxHeight))
+				.frame(width: size.width, height: min(size.height, maxBoxHeight))
 				.overlay(
 					HStack(alignment: .top, spacing: 0) {
 						if isSidebarVisible {
@@ -46,6 +99,9 @@ struct DraggableChatView: View {
 						mainContent
 					}
 				)
+				.overlay(
+				   ResizeHandles(size: $size)
+			   )
 				.offset(x: position.width + dragOffset.width,
 						y: position.height + dragOffset.height)
 				.gesture(
@@ -59,17 +115,19 @@ struct DraggableChatView: View {
 							dragOffset = .zero
 						}
 				)
-
-				Button(action: onClose, label: {
-					Image(systemName: "xmark.circle.fill")
-						.resizable()
-						.scaledToFit()
-						.frame(width: 20, height: 20)
-				})
-				.buttonStyle(.plain)
-				.padding(8)
-				.offset(x: position.width + dragOffset.width,
-						y: position.height + dragOffset.height)
+			
+			Button {
+				onClose()
+			} label: {
+				Image(systemName: "xmark.circle.fill")
+					.resizable()
+					.scaledToFit()
+					.frame(width: 20, height: 20)
+			}
+			.buttonStyle(.plain)
+			.padding(8)
+			.offset(x: position.width + dragOffset.width,
+					y: position.height + dragOffset.height)
 		}
 	}
 	
@@ -131,8 +189,6 @@ struct DraggableChatView: View {
 }
 
 struct ContentView: View {
-	@State private var selectedQuestionIndex: Int? = nil
-	@State private var position: CGSize = .zero
 	@State private var chatViews: [ChatViewModel]
 	
 	init(cards: [Card]) {
@@ -146,7 +202,6 @@ struct ContentView: View {
 			ForEach($chatViews) { $chatView in
 				DraggableChatView(
 					position: $chatView.position,
-					selectedQuestionIndex: $chatView.selectedQuestionIndex,
 					cards: $chatView.cards,
 					onClose: { closeChatView(id: chatView.id) }
 				)
@@ -173,7 +228,7 @@ struct ContentView: View {
 	
 	private func addNewChatView() {
 		let newPosition = CGSize(width: CGFloat.random(in: 0...200), height: CGFloat.random(in: 0...200))
-		let newChatView = ChatViewModel(position: newPosition, selectedQuestionIndex: nil, cards: Card.cards)
+		let newChatView = ChatViewModel(position: newPosition, cards: Card.cards)
 		chatViews.append(newChatView)
 	}
 }
