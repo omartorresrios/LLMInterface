@@ -50,8 +50,9 @@ struct ChatWindowView: View {
 	}
 	
 	private func addNewChatView() {
-		let newPosition = CGSize(width: CGFloat.random(in: 0...200), height: CGFloat.random(in: 0...200))
-		let newChatView = ChatViewModel(position: newPosition, cards: Card.cards)
+		let newPosition = CGSize(width: CGFloat.random(in: 0...200),
+								 height: CGFloat.random(in: 0...200))
+		let newChatView = ChatViewModel(position: newPosition, cards: [])
 		chatViews.append(newChatView)
 	}
 	
