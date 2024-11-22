@@ -14,6 +14,12 @@
 		249116DB2CEA4C23008E6FC6 /* AINavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249116DA2CEA4C23008E6FC6 /* AINavigationTests.swift */; };
 		249116E52CEA4C23008E6FC6 /* AINavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249116E42CEA4C23008E6FC6 /* AINavigationUITests.swift */; };
 		249116E72CEA4C23008E6FC6 /* AINavigationUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249116E62CEA4C23008E6FC6 /* AINavigationUITestsLaunchTests.swift */; };
+		249CFDCC2CF0CD3200C09CAA /* ChatWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDCB2CF0CD3200C09CAA /* ChatWindowView.swift */; };
+		249CFDCF2CF0D26F00C09CAA /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDCE2CF0D26F00C09CAA /* ChatViewModel.swift */; };
+		249CFDD12CF0D29C00C09CAA /* DraggableChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD02CF0D29C00C09CAA /* DraggableChatView.swift */; };
+		249CFDD32CF0D2DD00C09CAA /* ResizeHandles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD22CF0D2DD00C09CAA /* ResizeHandles.swift */; };
+		249CFDD52CF0D31000C09CAA /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD42CF0D31000C09CAA /* Card.swift */; };
+		249CFDD72CF0D37D00C09CAA /* ChatCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD62CF0D37D00C09CAA /* ChatCardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +51,12 @@
 		249116E02CEA4C23008E6FC6 /* AINavigationUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AINavigationUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		249116E42CEA4C23008E6FC6 /* AINavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AINavigationUITests.swift; sourceTree = "<group>"; };
 		249116E62CEA4C23008E6FC6 /* AINavigationUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AINavigationUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		249CFDCB2CF0CD3200C09CAA /* ChatWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatWindowView.swift; sourceTree = "<group>"; };
+		249CFDCE2CF0D26F00C09CAA /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		249CFDD02CF0D29C00C09CAA /* DraggableChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableChatView.swift; sourceTree = "<group>"; };
+		249CFDD22CF0D2DD00C09CAA /* ResizeHandles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeHandles.swift; sourceTree = "<group>"; };
+		249CFDD42CF0D31000C09CAA /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Card.swift; sourceTree = "<group>"; };
+		249CFDD62CF0D37D00C09CAA /* ChatCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,6 +112,8 @@
 				249116CC2CEA4C23008E6FC6 /* Assets.xcassets */,
 				249116D12CEA4C23008E6FC6 /* AINavigation.entitlements */,
 				249116CE2CEA4C23008E6FC6 /* Preview Content */,
+				249CFDCD2CF0D24F00C09CAA /* ChatWindow */,
+				249CFDD42CF0D31000C09CAA /* Card.swift */,
 			);
 			path = AINavigation;
 			sourceTree = "<group>";
@@ -127,6 +141,18 @@
 				249116E62CEA4C23008E6FC6 /* AINavigationUITestsLaunchTests.swift */,
 			);
 			path = AINavigationUITests;
+			sourceTree = "<group>";
+		};
+		249CFDCD2CF0D24F00C09CAA /* ChatWindow */ = {
+			isa = PBXGroup;
+			children = (
+				249CFDCB2CF0CD3200C09CAA /* ChatWindowView.swift */,
+				249CFDCE2CF0D26F00C09CAA /* ChatViewModel.swift */,
+				249CFDD02CF0D29C00C09CAA /* DraggableChatView.swift */,
+				249CFDD22CF0D2DD00C09CAA /* ResizeHandles.swift */,
+				249CFDD62CF0D37D00C09CAA /* ChatCardView.swift */,
+			);
+			path = ChatWindow;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -260,7 +286,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				249116CB2CEA4C21008E6FC6 /* ContentView.swift in Sources */,
+				249CFDCC2CF0CD3200C09CAA /* ChatWindowView.swift in Sources */,
+				249CFDD72CF0D37D00C09CAA /* ChatCardView.swift in Sources */,
+				249CFDD52CF0D31000C09CAA /* Card.swift in Sources */,
+				249CFDCF2CF0D26F00C09CAA /* ChatViewModel.swift in Sources */,
 				249116C92CEA4C21008E6FC6 /* AINavigationApp.swift in Sources */,
+				249CFDD12CF0D29C00C09CAA /* DraggableChatView.swift in Sources */,
+				249CFDD32CF0D2DD00C09CAA /* ResizeHandles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
