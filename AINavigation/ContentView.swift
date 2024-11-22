@@ -189,47 +189,18 @@ struct DraggableChatView: View {
 }
 
 struct ContentView: View {
-	@State private var chatViews: [ChatViewModel]
-	
-	init(cards: [Card]) {
-		let chats = [ChatViewModel(position: .zero, cards: Card.cards),
-					 ChatViewModel(position: CGSize(width: 100, height: 100), cards: Card.cards)]
-		chatViews = chats
-	}
-
+	@State private var chatIds: [UUID] = []
+	@Environment(\.openWindow) private var openWindow
+		
 	var body: some View {
-		ZStack {
-			ForEach($chatViews) { $chatView in
-				DraggableChatView(
-					position: $chatView.position,
-					cards: $chatView.cards,
-					onClose: { closeChatView(id: chatView.id) }
-				)
-			}
-			
-			VStack {
-				Spacer()
-				HStack {
-					Spacer()
-					Button(action: addNewChatView) {
-						Image(systemName: "plus.circle.fill")
-							.resizable()
-							.frame(width: 44, height: 44)
-					}
-					.padding()
-				}
+		VStack {
+			Text("Main Window")
+			Button("New Chat Window") {
+				let newChatId = UUID()
+				chatIds.append(newChatId)
+				openWindow(id: "chat", value: newChatId)
 			}
 		}
-	}
-	
-	private func closeChatView(id: UUID) {
-		chatViews.removeAll { $0.id == id }
-	}
-	
-	private func addNewChatView() {
-		let newPosition = CGSize(width: CGFloat.random(in: 0...200), height: CGFloat.random(in: 0...200))
-		let newChatView = ChatViewModel(position: newPosition, cards: Card.cards)
-		chatViews.append(newChatView)
 	}
 }
 
@@ -727,6 +698,6 @@ struct ChatCardView: View {
 //}
 
 #Preview {
-	ContentView(cards: [])
+	ContentView()
 		.frame(width: 600, height: 400)
 }
