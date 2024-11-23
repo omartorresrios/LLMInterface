@@ -8,57 +8,75 @@
 import SwiftUI
 
 enum Edge {
-case topLeft, topRight, bottomLeft, bottomRight
+	case topLeft, topRight, bottomLeft, bottomRight
 }
 
 struct ResizeHandles: View {
-   @Binding var size: CGSize
-   
-   var body: some View {
-	   ZStack {
-		   ResizeHandle { dx, dy in
-			   size.width = max(400, size.width + dx)
-			   size.height = max(300, size.height + dy)
-		   }
-		   .position(x: size.width - 10, y: size.height - 10) // Position at bottom right
-		   
-		   ResizeHandle { dx, dy in
-			   size.width = max(400, size.width - dx)
-			   size.height = max(300, size.height + dy)
-		   }
-		   .position(x: 10, y: size.height - 10) // Position at bottom left
-		   
-		   ResizeHandle { dx, dy in
-			   size.width = max(400, size.width + dx)
-			   size.height = max(300, size.height - dy)
-		   }
-		   .position(x: size.width - 10, y: 10) // Position at top right
-		   
-		   ResizeHandle { dx, dy in
-			   size.width = max(400, size.width - dx)
-			   size.height = max(300, size.height - dy)
-		   }
-		   .position(x: 10, y: 10) // Position at top left
-	   }
-   }
+	@Binding var size: CGSize
+	@Binding var isResizing: Bool
+	@State private var startLocation: CGPoint?
+	@State private var startSize: CGSize?
+	
+	var body: some View {
+		ZStack {
+			ResizeHandle(corner: .bottomRight, size: size) { location in
+				if startLocation == nil {
+					startLocation = location
+					startSize = size
+				}
+				isResizing = true
+				updateSize(location: location)
+			} onEnded: {
+				isResizing = false
+				startLocation = nil
+				startSize = nil
+			}
+		}
+	}
+	
+	private func updateSize(location: CGPoint) {
+		guard let startLocation = startLocation,
+			  let startSize = startSize else { return }
+
+		let dx = location.x - startLocation.x
+		let dy = location.y - startLocation.y
+
+		size.width = max(700, startSize.width + dx)
+		size.height = max(400, startSize.height + dy)
+	}
 }
 
 struct ResizeHandle: View {
-   let onResize: (CGFloat, CGFloat) -> Void
-   
-   var body: some View {
-	   Rectangle()
-		   .fill(Color.blue.opacity(0.5))
-		   .frame(width: 20, height: 20)
-		   .gesture(
-			   DragGesture(minimumDistance: 0)
-				   .onChanged { value in
-					   onResize(value.translation.width, value.translation.height)
-				   }
-		   )
-   }
+	let corner: Corner
+	let size: CGSize
+	let onResize: (CGPoint) -> Void
+	let onEnded: () -> Void
+
+	var body: some View {
+		Rectangle()
+			.fill(Color.blue.opacity(0.3))
+			.frame(width: 20, height: 20)
+			.position(corner.position(in: size))
+			.gesture(
+				DragGesture(minimumDistance: 0)
+					.onChanged { value in
+						onResize(value.location)
+					}
+					.onEnded { _ in
+						onEnded()
+					}
+			)
+	}
+}
+
+enum Corner: CaseIterable {
+	case bottomRight
+
+	func position(in size: CGSize) -> CGPoint {
+		CGPoint(x: size.width - 10, y: size.height - 10)
+	}
 }
 
 #Preview {
-	ResizeHandles(size: .constant(.zero))
+	ResizeHandles(size: .constant(.zero), isResizing: .constant(false))
 }

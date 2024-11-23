@@ -18,61 +18,87 @@ struct DraggableChatView: View {
 	var onAddNewPrompt: () -> Void
 	@State private var prompt: String = ""
 	@State private var currentCardIndex: Int = 0
-	@State private var size: CGSize = CGSize(width: 800, height: 600)
+	@State private var size: CGSize = CGSize(width: 700, height: 400)
+	@State private var isResizing: Bool = false
 	
-	private var screenHeight: CGFloat {
-		NSScreen.main?.frame.height ?? 1000
-	}
-	
-	private var maxBoxHeight: CGFloat {
-		screenHeight * 0.8
-	}
-
 	var body: some View {
-		ZStack(alignment: .topLeading) {
-			RoundedRectangle(cornerRadius: 16)
-				.fill(Color.gray.opacity(0.2))
-				.frame(width: size.width, height: min(size.height, maxBoxHeight))
-				.overlay(
-					HStack(alignment: .top, spacing: 0) {
-						if !cards.isEmpty {
-							sidebarContent
-								.frame(width: 200)
-								.background(Color.gray.opacity(0.1))
+		GeometryReader { geometry in
+			ZStack(alignment: .topLeading) {
+				RoundedRectangle(cornerRadius: 16)
+					.fill(Color.gray.opacity(0.2))
+					.frame(width: size.width, height: size.height)
+					.overlay(
+						HStack(alignment: .top, spacing: 0) {
+							if !cards.isEmpty {
+								sidebarContent
+									.frame(width: 200)
+									.background(Color.gray.opacity(0.1))
+							}
+							mainContent
 						}
-						mainContent
-					}
-				)
-				.overlay(
-				   ResizeHandles(size: $size)
-			   )
+					)
+					.overlay(
+						ResizeHandles(size: $size, isResizing: $isResizing)
+					)
+					.offset(x: position.width + dragOffset.width,
+							y: position.height + dragOffset.height)
+					.gesture(
+						DragGesture()
+							.onChanged { gesture in
+								if !isResizing {
+									let newPosition = CGSize(
+										width: position.width + gesture.translation.width,
+										height: position.height + gesture.translation.height
+									)
+									dragOffset = constrainDragOffset(for: newPosition, in: geometry.size)
+								}
+							}
+							.onEnded { gesture in
+								if !isResizing {
+									let newPosition = CGSize(
+										width: position.width + gesture.translation.width,
+										height: position.height + gesture.translation.height
+									)
+									position = constrainPosition(newPosition, in: geometry.size)
+									dragOffset = .zero
+								}
+							}
+					)
+				
+				Button {
+					onClose()
+				} label: {
+					Image(systemName: "xmark.circle.fill")
+						.resizable()
+						.scaledToFit()
+						.frame(width: 20, height: 20)
+				}
+				.buttonStyle(.plain)
+				.padding(8)
 				.offset(x: position.width + dragOffset.width,
 						y: position.height + dragOffset.height)
-				.gesture(
-					DragGesture()
-						.onChanged { gesture in
-							dragOffset = gesture.translation
-						}
-						.onEnded { gesture in
-							position.width += gesture.translation.width
-							position.height += gesture.translation.height
-							dragOffset = .zero
-						}
-				)
-			
-			Button {
-				onClose()
-			} label: {
-				Image(systemName: "xmark.circle.fill")
-					.resizable()
-					.scaledToFit()
-					.frame(width: 20, height: 20)
 			}
-			.buttonStyle(.plain)
-			.padding(8)
-			.offset(x: position.width + dragOffset.width,
-					y: position.height + dragOffset.height)
 		}
+	}
+	
+	private func constrainDragOffset(for newPosition: CGSize, in windowSize: CGSize) -> CGSize {
+		let maxX = windowSize.width - size.width
+		let maxY = windowSize.height - size.height
+		
+		return CGSize(
+			width: min(max(newPosition.width - position.width, -position.width), maxX - position.width),
+			height: min(max(newPosition.height - position.height, -position.height), maxY - position.height)
+		)
+	}
+	
+	private func constrainPosition(_ position: CGSize, in windowSize: CGSize) -> CGSize {
+		let maxX = windowSize.width - size.width
+		let maxY = windowSize.height - size.height
+		
+		return CGSize(
+			width: min(max(position.width, 0), maxX),
+			height: min(max(position.height, 0), maxY)
+		)
 	}
 	
 	private var sidebarContent: some View {
