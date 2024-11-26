@@ -10,7 +10,8 @@ import SwiftUI
 struct ContentView: View {
 	@State private var chatIds: [UUID] = []
 	@Environment(\.openWindow) private var openWindow
-		
+	var showHiddenChat: () -> Void
+	
 	var body: some View {
 		VStack {
 			Text("Main Window")
@@ -18,6 +19,7 @@ struct ContentView: View {
 				let newChatId = UUID()
 				chatIds.append(newChatId)
 				openWindow(id: "chat", value: newChatId)
+				showHiddenChat()
 			}
 		}
 	}
@@ -429,6 +431,6 @@ struct ContentView: View {
 //}
 
 #Preview {
-	ContentView()
+	ContentView(showHiddenChat: {})
 		.frame(width: 600, height: 400)
 }

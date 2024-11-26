@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-enum Edge {
-	case topLeft, topRight, bottomLeft, bottomRight
-}
-
 struct ResizeHandles: View {
 	@Binding var size: CGSize
 	@Binding var isResizing: Bool

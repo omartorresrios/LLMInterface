@@ -9,6 +9,7 @@ import Foundation
 
 struct ChatViewModel: Identifiable {
 	let id = UUID()
+	var size: CGSize
 	var position: CGSize
 	var cards: [Card]
 }

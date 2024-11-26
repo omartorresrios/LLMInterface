@@ -14,12 +14,13 @@ struct DraggableChatView: View {
 	@State private var expandedCardIndices: Set<Int> = []
 	@State private var dragOffset = CGSize.zero
 	@State private var isSidebarVisible: Bool = true // add logic: if main height is less that screen
-	var onClose: () -> Void
-	var onAddNewPrompt: () -> Void
 	@State private var prompt: String = ""
 	@State private var currentCardIndex: Int = 0
-	@State private var size: CGSize = CGSize(width: 700, height: 400)
+	@Binding var size: CGSize
 	@State private var isResizing: Bool = false
+	@State private var isPromptCentered = true
+	var onClose: () -> Void
+	var onAddNewPrompt: () -> Void
 	
 	var body: some View {
 		GeometryReader { geometry in
@@ -122,6 +123,9 @@ struct DraggableChatView: View {
 	
 	private func sendPrompt() {
 		guard !prompt.isEmpty && currentCardIndex < Card.cards.count else { return }
+		withAnimation(.easeInOut) {
+			isPromptCentered = false
+		}
 		var newCard = Card.cards[currentCardIndex]
 		newCard.setQuestion(question: prompt)
 		cards.append(newCard)
@@ -130,60 +134,72 @@ struct DraggableChatView: View {
 	}
 	
 	private var mainContent: some View {
-		ScrollViewReader { scrollProxy in
-			ScrollView {
+		GeometryReader { geometry in
+			ScrollViewReader { scrollProxy in
 				VStack(spacing: 10) {
-					ForEach(cards.indices, id: \.self) { index in
-						ChatCardView(
-							card: cards[index],
-							isExpanded: expandedCardIndices.contains(index),
-							onToggleExpand: {
-								if expandedCardIndices.contains(index) {
-									expandedCardIndices.remove(index)
-								} else {
-									expandedCardIndices.insert(index)
+					if cards.isEmpty && isPromptCentered {
+						Spacer()
+						promptInputView
+						Spacer()
+					} else {
+						ScrollView {
+							VStack(spacing: 10) {
+								ForEach(cards.indices, id: \.self) { index in
+									ChatCardView(
+										card: cards[index],
+										isExpanded: expandedCardIndices.contains(index),
+										onToggleExpand: {
+											if expandedCardIndices.contains(index) {
+												expandedCardIndices.remove(index)
+											} else {
+												expandedCardIndices.insert(index)
+											}
+										},
+										onRemove: {
+											cards.remove(at: index)
+											if let selectedIndex = selectedQuestionIndex, selectedIndex >= index {
+												selectedQuestionIndex = max(selectedIndex - 1, 0)
+											}
+										},
+										onAddNewPrompt: {
+											onAddNewPrompt()
+										}
+									)
+									.transition(.opacity)
 								}
-							},
-							onRemove: {
-								cards.remove(at: index)
-								if let selectedIndex = selectedQuestionIndex, selectedIndex >= index {
-									selectedQuestionIndex = max(selectedIndex - 1, 0)
-								}
-							},
-							onAddNewPrompt: {
-								onAddNewPrompt()
+								promptInputView
 							}
-						)
-						.id(index)
-						.transition(.opacity)
-					}
-					
-					HStack {
-						TextField("Enter your prompt", text: $prompt)
-							.textFieldStyle(RoundedBorderTextFieldStyle())
-							.padding(.leading)
-						Button(action: sendPrompt) {
-							Text("Send")
-								.padding(.horizontal)
-								.padding(.vertical, 8)
-								.background(Color.blue)
-								.foregroundColor(.white)
-								.cornerRadius(8)
+							.padding()
+							.animation(.default, value: cards)
 						}
-						.padding(.trailing)
-						.disabled(prompt.isEmpty || currentCardIndex >= Card.cards.count)
-					}
-				}
-				.padding()
-				.animation(.default, value: cards)
-			}
-			.onChange(of: selectedQuestionIndex) { _, newIndex in
-				if let newIndex = newIndex {
-					withAnimation {
-						scrollProxy.scrollTo(newIndex, anchor: .top)
+						.onChange(of: selectedQuestionIndex) { _, newIndex in
+							if let newIndex = newIndex {
+								withAnimation {
+									scrollProxy.scrollTo(newIndex, anchor:.top)
+								}
+							}
+						}
 					}
 				}
 			}
+		}
+	}
+
+	private var promptInputView: some View {
+		HStack {
+			TextField("Enter your prompt", text: $prompt)
+				.textFieldStyle(RoundedBorderTextFieldStyle())
+				.padding(.leading)
+			Button(action: sendPrompt) {
+				Text("Send")
+					.padding(.horizontal)
+					.padding(.vertical, 8)
+					.background(Color.blue)
+					.foregroundColor(.white)
+					.cornerRadius(8)
+			}
+			.padding(.trailing)
+			.disabled(prompt.isEmpty || currentCardIndex >= Card.cards.count)
 		}
 	}
 }
@@ -191,6 +207,6 @@ struct DraggableChatView: View {
 #Preview {
 	DraggableChatView(position: .constant(.zero),
 					  cards: .constant([]),
-					  onClose: { },
+					  size: .constant(.zero), onClose: { },
 					  onAddNewPrompt: { })
 }

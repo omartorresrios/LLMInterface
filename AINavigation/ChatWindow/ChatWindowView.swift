@@ -9,34 +9,52 @@ import SwiftUI
 
 struct ChatWindowView: View {
 	let chatId: UUID
-	@State private var chatViews: [ChatViewModel]
+	@State private var chatViews: [ChatViewModel] = []
 	
 	init(chatId: UUID) {
 		self.chatId = chatId
-		_chatViews = State(initialValue: [ChatViewModel(position: .zero, cards: [])])
 	}
 	
 	var body: some View {
-		ZStack {
-			ForEach($chatViews) { $chatView in
-				DraggableChatView(
-					position: $chatView.position,
-					cards: $chatView.cards,
-					onClose: { closeChatView(id: chatView.id) },
-					onAddNewPrompt: addNewChatView
-				)
-			}
-			
-			VStack {
-				Spacer()
-				HStack {
+		GeometryReader { geometry in
+			ZStack {
+				ForEach($chatViews) { $chatView in
+					DraggableChatView(
+						position: $chatView.position,
+						cards: $chatView.cards,
+						size: $chatView.size, 
+						onClose: { closeChatView(id: chatView.id) },
+						onAddNewPrompt: { addNewChatView(in: geometry.size) }
+					)
+				}
+				
+				VStack {
 					Spacer()
-					Button(action: addNewChatView) {
-						Image(systemName: "plus.circle.fill")
-							.resizable()
-							.frame(width: 44, height: 44)
+					HStack {
+						Spacer()
+						Button(action: { addNewChatView(in: geometry.size) }) {
+							Image(systemName: "plus.circle.fill")
+								.resizable()
+								.frame(width: 44, height: 44)
+						}
+						.padding()
 					}
-					.padding()
+				}
+			}
+			.onAppear {
+				if chatViews.isEmpty {
+					let padding: CGFloat = 20
+					let initialPosition = CGSize(
+						width: (geometry.size.width - 700) / 2,
+						height: padding
+					)
+					let initialSize = CGSize(width: 700,
+											 height: geometry.size.height - (padding * 2)
+					)
+					let initialChatView = ChatViewModel(size: initialSize,
+														position: initialPosition,
+														cards: [])
+					chatViews.append(initialChatView)
 				}
 			}
 		}
@@ -49,10 +67,13 @@ struct ChatWindowView: View {
 		}
 	}
 	
-	private func addNewChatView() {
-		let newPosition = CGSize(width: CGFloat.random(in: 0...200),
-								 height: CGFloat.random(in: 0...200))
-		let newChatView = ChatViewModel(position: newPosition, cards: [])
+	private func addNewChatView(in parentSize: CGSize) {
+		let padding: CGFloat = 20
+		let newPosition = CGSize(width: (parentSize.width - 700) / 2, height: padding)
+		let newSize = CGSize(width: 700, height: parentSize.height - (padding * 2))
+		let newChatView = ChatViewModel(size: newSize, 
+										position: newPosition,
+										cards: [])
 		chatViews.append(newChatView)
 	}
 	
