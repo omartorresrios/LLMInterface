@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ChatViewModel: Identifiable {
+struct ChatViewModel: Equatable, Identifiable {
 	let id = UUID()
 	var size: CGSize
 	var position: CGSize
