@@ -9,7 +9,6 @@ import Foundation
 
 struct ChatViewModel: Equatable, Identifiable {
 	let id = UUID()
-	var size: CGSize
 	var position: CGSize
 	var cards: [Card]
 }

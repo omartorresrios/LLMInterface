@@ -10,9 +10,10 @@ import SwiftUI
 struct ChatCardView: View {
 	let card: Card
 	var isExpanded: Bool
+	var branchOutDisabled: Bool
 	var onToggleExpand: () -> Void
 	var onRemove: () -> Void
-	var onAddNewPrompt: () -> Void
+	var onBranchOut: () -> Void
 	
 	var body: some View {
 		VStack(alignment: .leading, spacing: 8) {
@@ -20,10 +21,11 @@ struct ChatCardView: View {
 				Text(card.question)
 					.font(.headline)
 				Spacer()
-				Button(action: onAddNewPrompt) {
+				Button(action: onBranchOut) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(.red)
 				}
+				.disabled(branchOutDisabled)
 				Button(action: onRemove) {
 					Image(systemName: "trash")
 						.foregroundColor(.red)
@@ -56,7 +58,8 @@ struct ChatCardView: View {
 #Preview {
 	ChatCardView(card: Card.cards.first!,
 				 isExpanded: false,
+				 branchOutDisabled: false,
 				 onToggleExpand: { },
 				 onRemove: { },
-				 onAddNewPrompt: { })
+				 onBranchOut: { })
 }
