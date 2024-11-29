@@ -11,7 +11,7 @@ struct DraggableChatView: View {
 	@Binding var position: CGSize
 	@State var selectedQuestionIndex: Int?
 	@Binding var cards: [Card]
-	@State var branchOutDisabled: Bool
+	var branchOutDisabled: Bool
 	@State private var expandedCardIndices: Set<Int> = []
 	@State private var dragOffset = CGSize.zero
 	@State private var prompt: String = ""

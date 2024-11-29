@@ -23,7 +23,7 @@ struct ChatWindowView: View {
 					DraggableChatView(
 						position: $chatViews[0].position,
 						cards: $chatViews[0].cards,
-						branchOutDisabled: chatViews.count > 2,
+						branchOutDisabled: chatViews[0].branchOutDisabled,
 						onClose: { closeChatView(id: chatViews[0].id) },
 						onBranchOut: { addNewChatView() }
 					)
@@ -35,7 +35,7 @@ struct ChatWindowView: View {
 							DraggableChatView(
 								position: $chatViews[index].position,
 								cards: $chatViews[index].cards,
-								branchOutDisabled: chatViews.count > 2,
+								branchOutDisabled: chatViews[index].branchOutDisabled,
 								onClose: { closeChatView(id: chatViews[index].id) },
 								onBranchOut: { addNewChatView() }
 							)
@@ -52,6 +52,11 @@ struct ChatWindowView: View {
 				windowSize = geometry.size
 				if chatViews.isEmpty {
 					addInitialChatView(in: windowSize)
+				}
+			}
+			.onChange(of: chatViews.count) { _, newCount in
+				for index in chatViews.indices {
+					chatViews[index].branchOutDisabled = newCount > 2
 				}
 			}
 			
