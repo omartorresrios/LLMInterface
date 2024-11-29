@@ -125,6 +125,29 @@ struct DraggableChatView: View {
 			}
 		}
 	}
+	
+	private func chatCardView(with index: Int) -> ChatCardView {
+		ChatCardView(
+			card : cards[index],
+			isExpanded : expandedCardIndices.contains(index),
+			branchOutDisabled: branchOutDisabled,
+			onToggleExpand: {
+				if expandedCardIndices.contains(index) {
+					expandedCardIndices.remove(index)
+				} else {
+					expandedCardIndices.insert(index)
+				}
+			},
+			onRemove: {
+				cards.remove(at: index)
+				if let selectedIndex = selectedQuestionIndex,
+				   selectedIndex >= index {
+					selectedQuestionIndex = max(selectedIndex - 1, 0)
+				}
+			},
+			onBranchOut: onBranchOut
+		)
+	}
 
 	private var promptInputView: some View {
 		HStack {

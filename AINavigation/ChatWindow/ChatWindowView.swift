@@ -20,25 +20,13 @@ struct ChatWindowView: View {
 		GeometryReader { geometry in
 			HStack(spacing: 20) {
 				if !chatViews.isEmpty {
-					DraggableChatView(
-						position: $chatViews[0].position,
-						cards: $chatViews[0].cards,
-						branchOutDisabled: chatViews[0].branchOutDisabled,
-						onClose: { closeChatView(id: chatViews[0].id) },
-						onBranchOut: { addNewChatView() }
-					)
+					draggableChatView(for: $chatViews[0])
 					.frame(width: halfView(geometry.size.width),
 						   height: fullHeight(geometry.size.height))
 					
 					VStack(spacing: 20) {
 						ForEach(1..<chatViews.count, id: \.self) { index in
-							DraggableChatView(
-								position: $chatViews[index].position,
-								cards: $chatViews[index].cards,
-								branchOutDisabled: chatViews[index].branchOutDisabled,
-								onClose: { closeChatView(id: chatViews[index].id) },
-								onBranchOut: { addNewChatView() }
-							)
+							draggableChatView(for: $chatViews[index])
 							.frame(width: halfView(geometry.size.width),
 								   height: chatViews.count == 2 ? fullHeight(geometry.size.height) : halfView(geometry.size.height))
 						}
@@ -74,6 +62,16 @@ struct ChatWindowView: View {
 				}
 			}
 		}
+	}
+	
+	private func draggableChatView(for chatView: Binding<ChatViewModel>) -> some View {
+		DraggableChatView(
+			position: chatView.position,
+			cards: chatView.cards,
+			branchOutDisabled: chatView.branchOutDisabled.wrappedValue,
+			onClose: { closeChatView(id: chatView.id) },
+			onBranchOut: { addNewChatView() }
+		)
 	}
 	
 	private func fullHeight(_ parentHeight: CGFloat) -> CGFloat {
