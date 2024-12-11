@@ -11,6 +11,9 @@ import SwiftUI
 struct AINavigationApp: App {
 	@State private var hiddenChatId: UUID? = nil
 	@State private var isHiddenChatVisible = false
+	@State private var zoomingOut = false
+	@State private var chatViewsCount = 0
+	@State private var scale: CGFloat = 1.0
 	
     var body: some Scene {
         WindowGroup(id: "main") {
@@ -19,13 +22,21 @@ struct AINavigationApp: App {
 		
 		WindowGroup(id: "chat", for: UUID.self) { $chatId in
 			if let chatId = chatId {
-				ChatWindowView(chatId: chatId)
+				ChatWindowView(chatId: chatId,
+							   zoomingOut: $zoomingOut,
+							   chatViewsCount: $chatViewsCount)
+					.contentShape(Rectangle())
+					.gesture(chatViewsCount == 1 ? zoomout : nil)
 			}
 		}
 		
 		WindowGroup("HiddenChat") {
 			if let hiddenChatId = hiddenChatId {
-				ChatWindowView(chatId: hiddenChatId)
+				ChatWindowView(chatId: hiddenChatId,
+							   zoomingOut: $zoomingOut,
+							   chatViewsCount: $chatViewsCount)
+					.contentShape(Rectangle())
+					.gesture(chatViewsCount == 1 ? zoomout : nil)
 					.opacity(isHiddenChatVisible ? 1 : 0)
 					.disabled(!isHiddenChatVisible)
 					.onAppear {
@@ -36,6 +47,17 @@ struct AINavigationApp: App {
 			}
 		}
     }
+	
+	private var zoomout: some Gesture {
+		MagnificationGesture()
+			.onChanged { value in
+				zoomingOut = value < scale
+				scale = value
+			}
+			.onEnded { _ in
+				scale = 1.0
+			}
+	}
 	
 	private func showHiddenChat() {
 		if hiddenChatId == nil {

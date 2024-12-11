@@ -11,9 +11,15 @@ struct ChatWindowView: View {
 	let chatId: UUID
 	@State private var chatViews: [ChatViewModel] = []
 	@State private var windowSize: CGSize = .zero
+	@Binding var zoomingOut: Bool
+	@Binding var chatViewsCount: Int
 	
-	init(chatId: UUID) {
+	init(chatId: UUID,
+		 zoomingOut: Binding<Bool>,
+		 chatViewsCount: Binding<Int>) {
 		self.chatId = chatId
+		_zoomingOut = zoomingOut
+		_chatViewsCount = chatViewsCount
 	}
 	
 	var body: some View {
@@ -21,18 +27,16 @@ struct ChatWindowView: View {
 			HStack(spacing: 20) {
 				if !chatViews.isEmpty {
 					draggableChatView(for: $chatViews[0])
-					.frame(width: halfView(geometry.size.width),
-						   height: fullHeight(geometry.size.height))
+						.frame(width: singleChatViewWidth(geometry: geometry),
+						   height: full(geometry.size.height))
 					
 					VStack(spacing: 20) {
 						ForEach(1..<chatViews.count, id: \.self) { index in
 							draggableChatView(for: $chatViews[index])
-							.frame(width: halfView(geometry.size.width),
-								   height: chatViews.count == 2 ? fullHeight(geometry.size.height) : halfView(geometry.size.height))
+							.frame(width: half(geometry.size.width),
+								   height: multipleChatViewHeight(geometry: geometry))
 						}
 					}
-					.frame(width: halfView(geometry.size.width),
-						   height: fullHeight(geometry.size.height))
 				}
 			}
 			.padding(20)
@@ -43,6 +47,7 @@ struct ChatWindowView: View {
 				}
 			}
 			.onChange(of: chatViews.count) { _, newCount in
+				chatViewsCount = newCount
 				for index in chatViews.indices {
 					chatViews[index].branchOutDisabled = newCount > 2
 				}
@@ -52,7 +57,9 @@ struct ChatWindowView: View {
 				Spacer()
 				HStack {
 					Spacer()
-					Button(action: { addNewChatView() }) {
+					Button {
+						addNewChatView()
+					} label: {
 						Image(systemName: "plus.circle.fill")
 							.resizable()
 							.frame(width: 44, height: 44)
@@ -65,21 +72,27 @@ struct ChatWindowView: View {
 	}
 	
 	private func draggableChatView(for chatView: Binding<ChatViewModel>) -> some View {
-		DraggableChatView(
-			position: chatView.position,
-			cards: chatView.cards,
-			branchOutDisabled: chatView.branchOutDisabled.wrappedValue,
-			onClose: { closeChatView(id: chatView.id) },
-			onBranchOut: { addNewChatView() }
-		)
+		DraggableChatView(position: chatView.position,
+						  cards: chatView.cards,
+						  branchOutDisabled: chatView.branchOutDisabled.wrappedValue,
+						  onClose: { closeChatView(id: chatView.id) },
+						  onBranchOut: { addNewChatView() })
 	}
 	
-	private func fullHeight(_ parentHeight: CGFloat) -> CGFloat {
+	private func full(_ parentHeight: CGFloat) -> CGFloat {
 		return parentHeight - 40
 	}
 	
-	private func halfView(_ parentWidth: CGFloat) -> CGFloat {
-		return (parentWidth - 60) / 2
+	private func half(_ parentHeight: CGFloat) -> CGFloat {
+		return (parentHeight - 60) / 2
+	}
+	
+	private func singleChatViewWidth(geometry: GeometryProxy) -> CGFloat {
+		zoomingOut ? half(geometry.size.width) : full(geometry.size.width)
+	}
+	
+	private func multipleChatViewHeight(geometry: GeometryProxy) -> CGFloat {
+		chatViews.count == 2 ? full(geometry.size.height) : half(geometry.size.height)
 	}
 	
 	private func addInitialChatView(in size: CGSize) {
@@ -107,5 +120,7 @@ struct ChatWindowView: View {
 }
 
 #Preview {
-	ChatWindowView(chatId: UUID())
+	ChatWindowView(chatId: UUID(), 
+				   zoomingOut: .constant(false),
+				   chatViewsCount: .constant(0))
 }
