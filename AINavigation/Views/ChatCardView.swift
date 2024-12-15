@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ChatCardView: View {
-	let card: Card
+	let card: Chat
 	var isExpanded: Bool
 	var branchOutDisabled: Bool
 	var onToggleExpand: () -> Void
@@ -18,7 +18,7 @@ struct ChatCardView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 8) {
 			HStack {
-				Text(card.question)
+				Text(card.prompt)
 					.font(.headline)
 				Spacer()
 				Button(action: onBranchOut) {
@@ -34,10 +34,10 @@ struct ChatCardView: View {
 			
 			VStack(alignment: .leading, spacing: 4) {
 				if isExpanded {
-					Text(card.response)
+					Text(card.output)
 						.font(.body)
 				} else {
-					Text(card.response)
+					Text(card.output)
 						.font(.body)
 						.lineLimit(2)
 						.truncationMode(.tail)
@@ -56,7 +56,7 @@ struct ChatCardView: View {
 }
 
 #Preview {
-	ChatCardView(card: Card.cards.first!,
+	ChatCardView(card: Chat.cards.first!,
 				 isExpanded: false,
 				 branchOutDisabled: false,
 				 onToggleExpand: { },
