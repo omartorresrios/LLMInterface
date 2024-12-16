@@ -12,6 +12,7 @@ import Observation
 final class ChatContainer: Identifiable {
 	let id = UUID()
 	var sections: [ChatSection]
+	var searchText = ""
 	
 	init() {
 		sections = [ChatSection()]
