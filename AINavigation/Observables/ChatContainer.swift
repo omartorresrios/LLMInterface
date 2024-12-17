@@ -11,6 +11,7 @@ import Observation
 @Observable
 final class ChatContainer: Identifiable {
 	let id = UUID()
+	var name = "Unnamed chat"
 	var sections: [ChatSection]
 	var searchText = ""
 	
@@ -24,5 +25,9 @@ final class ChatContainer: Identifiable {
 	
 	func addChatSection() {
 		sections.append(ChatSection())
+	}
+	
+	func setName(_ name: String) {
+		self.name = name
 	}
 }

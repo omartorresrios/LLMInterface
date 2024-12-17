@@ -14,7 +14,12 @@ struct SidebarView: View {
 		List(chatsManager.chatContainers,
 			 id: \.id,
 			 selection: $chatsManager.selectedChatContainerId) { chatContainer in
-			Text("\(chatContainer.id)")
+			TextField("Chat Name", text: Binding(
+				get: { chatContainer.name },
+				set: { newValue in
+					chatContainer.setName(newValue)
+				}
+			))
 		}
 		.toolbar {
 			Button(action: { chatsManager.addChatContainer() }) {
