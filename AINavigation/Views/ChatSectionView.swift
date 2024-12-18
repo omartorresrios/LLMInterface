@@ -10,9 +10,9 @@ import SwiftUI
 struct ChatSectionView: View {
 	var chats: [Chat]
 	@State var selectedPromptIndex: Int?
-	@State private var expandedPromptIndices: Set<Int> = []
 	@State private var currentPromptIndex: Int = 0
 	@State private var prompt: String = ""
+	@State var chatCardViewWidth: CGFloat = 0.0
 	var onClose: () -> Void
 	var onBranchOut: () -> Void
 	var onBranchOutDisabled: Bool
@@ -75,23 +75,27 @@ struct ChatSectionView: View {
 					ScrollView {
 						VStack(spacing: 10) {
 							ForEach(chats.indices, id:\.self) { index in
-								ChatCardView(
-									card : chats[index],
-									isExpanded : expandedPromptIndices.contains(index),
-									branchOutDisabled: onBranchOutDisabled,
-									onToggleExpand: {
-										if expandedPromptIndices.contains(index) {
-											expandedPromptIndices.remove(index)
-										} else {
-											expandedPromptIndices.insert(index)
-										}
-									},
-									onRemove: {
-										removePrompt(index)
-									},
-									onBranchOut: onBranchOut
-								)
+								ChatCardView(card : chats[index],
+											 branchOutDisabled: onBranchOutDisabled,
+											onRemove: {
+												removePrompt(index)
+											},
+											onBranchOut: {
+												onBranchOut()
+											},
+											width: $chatCardViewWidth)
 								.transition(.opacity)
+								.background(
+									GeometryReader { proxy in
+										Color.clear
+											.onAppear {
+												chatCardViewWidth = proxy.size.width
+											}
+											.onChange(of: proxy.size.width) { _, newValue in
+												chatCardViewWidth = newValue
+											}
+									}
+								)
 							}
 							promptInputView
 						}
@@ -113,7 +117,9 @@ struct ChatSectionView: View {
 		HStack {
 			TextField("Enter your prompt", text: $prompt)
 				.textFieldStyle(RoundedBorderTextFieldStyle())
-				.padding(.leading)
+				.onSubmit {
+					sendPrompt()
+				}
 
 			Button(action: sendPrompt){
 				Text("Send")
@@ -123,8 +129,9 @@ struct ChatSectionView: View {
 					.foregroundColor(.white)
 					.cornerRadius(8)
 			}
-			.padding(.trailing).disabled(prompt.isEmpty || currentPromptIndex >= Chat.cards.count)
+			.disabled(prompt.isEmpty || currentPromptIndex >= Chat.cards.count)
 		}
+		.padding(.horizontal, chats.count > 0 ? 0 : 16)
 	}
 	
 	private func sendPrompt() {
