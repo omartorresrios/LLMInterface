@@ -13,41 +13,25 @@ struct ChatSectionView: View {
 	@State private var currentPromptIndex: Int = 0
 	@State private var prompt: String = ""
 	@State var chatCardViewWidth: CGFloat = 0.0
-	var onClose: () -> Void
-	var onBranchOut: () -> Void
-	var onBranchOutDisabled: Bool
 	var addNewPrompt: (Chat) -> Void
 	var removePrompt: (Int) -> Void
 	
 	var body: some View {
-		ZStack(alignment: .topLeading) {
-			RoundedRectangle(cornerRadius: 16)
-				.fill(Color.gray.opacity(0.2))
-				.overlay(
-					HStack(alignment: .top, spacing: 0) {
-						if !chats.isEmpty {
-							sidebarContent
-								.frame(width: 200)
-								.background(Color.gray.opacity(0.1))
-						}
-						mainContent
-					}
-				)
-
-			Button(action: onClose) {
-				Image(systemName: "xmark.circle.fill")
-					.resizable()
-					.scaledToFit()
-					.frame(width: 20, height: 20)
+		GeometryReader { geometry in
+			HStack(alignment: .top, spacing: 0) {
+				if !chats.isEmpty {
+					sidebarContent
+						.frame(width: geometry.size.width * 0.2)
+				}
+				mainContent
+					.frame(maxWidth: .infinity)
 			}
-			.buttonStyle(.plain)
-			.padding(8)
 		}
 	}
 	
 	private var sidebarContent: some View {
 		VStack(alignment: .leading) {
-			Text("Indexed Questions")
+			Text("Prompts")
 				.font(.headline)
 				.padding()
 			Divider()
@@ -76,12 +60,13 @@ struct ChatSectionView: View {
 						VStack(spacing: 10) {
 							ForEach(chats.indices, id:\.self) { index in
 								ChatCardView(card : chats[index],
-											 branchOutDisabled: onBranchOutDisabled,
 											onRemove: {
 												removePrompt(index)
 											},
 											onBranchOut: {
-												onBranchOut()
+												withAnimation {
+													scrollProxy.scrollTo(index, anchor: .center)
+												}
 											},
 											width: $chatCardViewWidth)
 								.transition(.opacity)
@@ -111,6 +96,7 @@ struct ChatSectionView: View {
 				}
 			}
 		}
+		.background(.gray.opacity(0.4))
 	}
 	
 	private var promptInputView: some View {

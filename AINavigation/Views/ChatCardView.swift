@@ -12,7 +12,7 @@ struct SelectableTextView: NSViewRepresentable {
 	@Binding var selectedText: String
 
 	func makeNSView(context: Context) -> NSTextView {
-		let customFont = NSFont(name: "Helvetica Neue", size: 14)
+		let customFont = NSFont(name: "Helvetica Neue", size: 16)
 		let textView = NSTextView()
 		textView.string = text
 		textView.font = customFont
@@ -24,9 +24,9 @@ struct SelectableTextView: NSViewRepresentable {
 		textView.backgroundColor = NSColor.clear
 		
 		// Customize selection attributes
-		textView.insertionPointColor = .blue
+		textView.insertionPointColor = .green
 		textView.selectedTextAttributes = [
-			.backgroundColor: NSColor.blue.withAlphaComponent(0.3),
+			.backgroundColor: NSColor.green.withAlphaComponent(0.3),
 			.foregroundColor: NSColor.black
 		]
 
@@ -68,9 +68,9 @@ struct SelectableTextView: NSViewRepresentable {
 struct ChatCardView: View {
 	let card: Chat
 	@State var isExpanded: Bool = false
-	var branchOutDisabled: Bool
 	var onRemove: () -> Void
 	var onBranchOut: () -> Void
+	@State var showDeepDiveView = false
 	@Binding var width: CGFloat
 	
 	@State private var selectedText: String = ""
@@ -82,11 +82,14 @@ struct ChatCardView: View {
 				Text(card.prompt)
 					.font(.headline)
 				Spacer()
-				Button(action: onBranchOut) {
+				Button(action: {
+					onBranchOut()
+					showDeepDiveView = true
+				}) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(.red)
 				}
-				.disabled(branchOutDisabled)
+				.disabled(showDeepDiveView)
 				Button(action: onRemove) {
 					Image(systemName: "trash")
 						.foregroundColor(.red)
@@ -100,11 +103,24 @@ struct ChatCardView: View {
 				}
 			}
 			if isExpanded {
-				SelectableTextView(text: card.output, 
-								   selectedText: $selectedText)
+				HStack {
+					SelectableTextView(text: card.output,
+									   selectedText: $selectedText)
 					.frame(height: textHeight)
 					.clipped()
-					.background(.red)
+					//					.background(.red)
+					
+					if showDeepDiveView {
+						VStack {
+							Button {
+								showDeepDiveView.toggle()
+							} label: {
+								Image(systemName: "arrow.right")
+							}
+							Text("This is just a test of the pop up view.")
+						}
+					}
+				}
 			} else {
 				VStack {
 					Text(card.output)
@@ -127,7 +143,7 @@ struct ChatCardView: View {
 	
 	private func calculateHeight(for text: String, 
 								with width: CGFloat) -> CGFloat {
-		let customFont = NSFont(name: "Helvetica Neue", size: 14)
+		let customFont = NSFont(name: "Helvetica Neue", size: 16)
 		let attributes: [NSAttributedString.Key: Any] = [.font: customFont]
 		let size = CGSize(width: width - 40, height: .greatestFiniteMagnitude)
 		let boundingRect = (text as NSString).boundingRect(with: size,
@@ -141,7 +157,6 @@ struct ChatCardView: View {
 #Preview {
 	ChatCardView(card: Chat.cards.first!,
 				 isExpanded: false,
-				 branchOutDisabled: false,
 				 onRemove: { },
 				 onBranchOut: { }, width: .constant(20))
 }

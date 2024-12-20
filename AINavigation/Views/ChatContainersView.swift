@@ -8,19 +8,61 @@
 import SwiftUI
 import Observation
 
+struct ShowEditModal {
+	var show: Bool
+	var currentChatName: String
+	var editingChatId: UUID
+	
+	init(show: Bool = false, 
+		 currentChatName: String = "",
+		 editingChatId: UUID? = nil) {
+		self.show = show
+		self.currentChatName = currentChatName
+		self.editingChatId = editingChatId ?? UUID()
+	}
+	
+	mutating func setValues(_ show: Bool,
+							_ currentChatName: String,
+							_ editingChatId: UUID) {
+		self.show = show
+		self.currentChatName = currentChatName
+		self.editingChatId = editingChatId
+	}
+}
+
 struct ChatContainersView: View {
 	@State private var chatsManager = ChatsManager()
+	@State private var showEditModal = ShowEditModal()
 	
 	var body: some View {
 		GeometryReader { geometry in
-			NavigationSplitView {
-				SidebarView(chatsManager: chatsManager)
-			} detail: {
-				if let selectedChatId = chatsManager.selectedChatContainerId, 
-					let chatContainer = chatsManager.chatContainers.first(where: { $0.id == selectedChatId })  {
-					ChatView(chatContainer: chatContainer)
-				} else {
-					Text("Select a chat")
+			ZStack {
+				HStack(spacing: 0) {
+					SidebarView(chatsManager: chatsManager,
+								showEditModal: $showEditModal)
+						.frame(width: geometry.size.width * 0.2)
+					Divider()
+					if let selectedChatId = chatsManager.selectedChatContainerId,
+					   let chatContainer = chatsManager.chatContainers.first(where: { $0.id == selectedChatId })  {
+						ChatView(chatContainer: chatContainer)
+							.frame(maxWidth: .infinity)
+					}
+				}
+				.background(Color.green.opacity(0.3))
+				
+				if showEditModal.show {
+					Color.black.opacity(0.4)
+						.edgesIgnoringSafeArea(.all)
+					
+					EditChatNameView(chatName: $showEditModal.currentChatName, 
+									 isPresented: $showEditModal.show,
+									 chatContainerWidth: geometry.size.width)
+						.onDisappear {
+							if let index = chatsManager.chatContainers.firstIndex(where: { $0.id == showEditModal.editingChatId }) {
+								chatsManager.chatContainers[index].setName(showEditModal.currentChatName)
+							}
+						}
+						.transition(.scale)
 				}
 			}
 		}

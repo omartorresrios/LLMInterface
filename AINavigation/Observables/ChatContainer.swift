@@ -12,19 +12,11 @@ import Observation
 final class ChatContainer: Identifiable {
 	let id = UUID()
 	var name = "Unnamed chat"
-	var sections: [ChatSection]
+	var section: ChatSection
 	var searchText = ""
 	
 	init() {
-		sections = [ChatSection()]
-	}
-	
-	func removeChatSection(index: Int) {
-		sections.remove(at: index)
-	}
-	
-	func addChatSection() {
-		sections.append(ChatSection())
+		section = ChatSection()
 	}
 	
 	func setName(_ name: String) {

@@ -12,6 +12,7 @@
 		24538B2A2D0F205B0099DB0E /* SideBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B292D0F205B0099DB0E /* SideBarView.swift */; };
 		24538B2D2D0F20970099DB0E /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B2C2D0F20970099DB0E /* ChatView.swift */; };
 		24538B302D0F22EE0099DB0E /* ChatSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B2F2D0F22EE0099DB0E /* ChatSection.swift */; };
+		246454FB2D15D44300004262 /* EditChatNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246454FA2D15D44300004262 /* EditChatNameView.swift */; };
 		249116C92CEA4C21008E6FC6 /* AINavigationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249116C82CEA4C21008E6FC6 /* AINavigationApp.swift */; };
 		249116CD2CEA4C23008E6FC6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 249116CC2CEA4C23008E6FC6 /* Assets.xcassets */; };
 		249116D02CEA4C23008E6FC6 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 249116CF2CEA4C23008E6FC6 /* Preview Assets.xcassets */; };
@@ -47,6 +48,7 @@
 		24538B292D0F205B0099DB0E /* SideBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideBarView.swift; sourceTree = "<group>"; };
 		24538B2C2D0F20970099DB0E /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		24538B2F2D0F22EE0099DB0E /* ChatSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSection.swift; sourceTree = "<group>"; };
+		246454FA2D15D44300004262 /* EditChatNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditChatNameView.swift; sourceTree = "<group>"; };
 		249116C52CEA4C21008E6FC6 /* AINavigation.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AINavigation.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		249116C82CEA4C21008E6FC6 /* AINavigationApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AINavigationApp.swift; sourceTree = "<group>"; };
 		249116CC2CEA4C23008E6FC6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 				24538B2C2D0F20970099DB0E /* ChatView.swift */,
 				249CFDD02CF0D29C00C09CAA /* ChatSectionView.swift */,
 				249CFDD62CF0D37D00C09CAA /* ChatCardView.swift */,
+				246454FA2D15D44300004262 /* EditChatNameView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -307,6 +310,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				246454FB2D15D44300004262 /* EditChatNameView.swift in Sources */,
 				24538B2D2D0F20970099DB0E /* ChatView.swift in Sources */,
 				24538B302D0F22EE0099DB0E /* ChatSection.swift in Sources */,
 				24538B252D0F1E7A0099DB0E /* ChatsManager.swift in Sources */,
