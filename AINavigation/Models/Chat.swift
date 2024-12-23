@@ -10,8 +10,8 @@ struct Chat: Hashable {
 	var prompt: String = ""
 	let output: String
 	
-	mutating func setQuestion(question: String) {
-		self.prompt = question
+	mutating func setPrompt(_ prompt: String) {
+		self.prompt = prompt
 	}
 	
 	static let cards = [Chat(id: 1,

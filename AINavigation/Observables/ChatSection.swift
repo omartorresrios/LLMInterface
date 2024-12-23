@@ -16,8 +16,4 @@ class ChatSection: Identifiable {
 	func addPrompt(chat: Chat) {
 		chats.append(chat)
 	}
-	
-	func removePrompt(index: Int) {
-		chats.remove(at: index)
-	}
 }

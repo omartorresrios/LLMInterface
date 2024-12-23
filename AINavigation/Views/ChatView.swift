@@ -11,18 +11,9 @@ struct ChatView: View {
 	@Bindable var chatContainer: ChatContainer
 	
 	var body: some View {
-		ChatSectionView(chats: chatContainer.section.chats,
-						addNewPrompt: { chat in
-			addNewPrompt(with: chat)
-		},
-						removePrompt: { promptIndex in
-			removePrompt(promptIndex: promptIndex)
-		})
+		ChatSectionView(chats: $chatContainer.section.chats,
+						addNewPrompt: { newChat in addNewPrompt(with: newChat) })
 		.searchable(text: $chatContainer.searchText, prompt: "Search in chat history")
-	}
-	
-	private func removePrompt(promptIndex: Int) {
-		chatContainer.section.removePrompt(index: promptIndex)
 	}
 	
 	private func addNewPrompt(with chat: Chat) {

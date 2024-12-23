@@ -8,18 +8,19 @@
 import SwiftUI
 
 struct ChatSectionView: View {
-	var chats: [Chat]
+	@Binding var chats: [Chat]
 	@State var selectedPromptIndex: Int?
 	@State private var currentPromptIndex: Int = 0
 	@State private var prompt: String = ""
 	@State var chatCardViewWidth: CGFloat = 0.0
 	var addNewPrompt: (Chat) -> Void
-	var removePrompt: (Int) -> Void
-	
+	@State private var mainContentHeight: CGFloat = 0
+	@FocusState private var isFocused: Bool
+
 	var body: some View {
 		GeometryReader { geometry in
 			HStack(alignment: .top, spacing: 0) {
-				if !chats.isEmpty {
+				if mainContentHeight > geometry.size.height {
 					sidebarContent
 						.frame(width: geometry.size.width * 0.2)
 				}
@@ -60,16 +61,11 @@ struct ChatSectionView: View {
 						VStack(spacing: 10) {
 							ForEach(chats.indices, id:\.self) { index in
 								ChatCardView(card : chats[index],
-											onRemove: {
-												removePrompt(index)
-											},
-											onBranchOut: {
-												withAnimation {
-													scrollProxy.scrollTo(index, anchor: .center)
-												}
-											},
+											onRemove: { removePrompt(at: index) },
+											onBranchOut: { branchOut(from: scrollProxy, at: index) },
 											width: $chatCardViewWidth)
-								.transition(.opacity)
+								.transition(.opacity.combined(with: .move(edge: .top)))
+								.id(index)
 								.background(
 									GeometryReader { proxy in
 										Color.clear
@@ -85,18 +81,29 @@ struct ChatSectionView: View {
 							promptInputView
 						}
 						.padding()
+						.background(
+							GeometryReader { contentGeometry in
+								Color.clear
+									.onChange(of: contentGeometry.size.height) { _, newHeight in
+										mainContentHeight = newHeight
+									}
+									.onAppear {
+										mainContentHeight = contentGeometry.size.height
+									}
+							}
+						)
 					}
 					.onChange(of: selectedPromptIndex) { _, newIndex in
 						if let newIndex = newIndex {
 							withAnimation {
 								scrollProxy.scrollTo(newIndex, anchor: .top)
+								selectedPromptIndex = nil
 							}
 						}
 					}
 				}
 			}
 		}
-		.background(.gray.opacity(0.4))
 	}
 	
 	private var promptInputView: some View {
@@ -104,10 +111,13 @@ struct ChatSectionView: View {
 			TextField("Enter your prompt", text: $prompt)
 				.textFieldStyle(RoundedBorderTextFieldStyle())
 				.onSubmit {
-					sendPrompt()
+					if !prompt.isEmpty {
+						sendPrompt()
+					}
 				}
-
-			Button(action: sendPrompt){
+				.focused($isFocused)
+			
+			Button(action: sendPrompt) {
 				Text("Send")
 					.padding(.horizontal)
 					.padding(.vertical,8)
@@ -115,18 +125,42 @@ struct ChatSectionView: View {
 					.foregroundColor(.white)
 					.cornerRadius(8)
 			}
-			.disabled(prompt.isEmpty || currentPromptIndex >= Chat.cards.count)
+			.buttonStyle(.plain)
+			.disabled(prompt.isEmpty)
 		}
 		.padding(.horizontal, chats.count > 0 ? 0 : 16)
+		.onAppear {
+			DispatchQueue.main.async {
+				isFocused = true
+			}
+		}
 	}
 	
 	private func sendPrompt() {
-		guard !prompt.isEmpty && currentPromptIndex < Chat.cards.count else { return }
-		
+		guard currentPromptIndex < Chat.cards.count else { return }
 		var newPrompt = Chat.cards[currentPromptIndex]
-		newPrompt.setQuestion(question: prompt)
-		addNewPrompt(newPrompt)
-		currentPromptIndex += 1
+		newPrompt.setPrompt(prompt)
+		
+		withAnimation(.easeInOut(duration: 0.5)) {
+			addNewPrompt(newPrompt)
+		}
 		prompt = ""
+		currentPromptIndex += 1
+		isFocused = true
+	}
+	
+	private func removePrompt(at index: Int) {
+		_ = withAnimation(.easeInOut(duration: 0.1)) {
+			chats.remove(at: index)
+		}
+		if chats.isEmpty {
+			isFocused = true
+		 }
+	}
+	
+	private func branchOut(from scrollProxy: ScrollViewProxy, at index: Int) {
+		withAnimation {
+			scrollProxy.scrollTo(index, anchor: .center)
+		}
 	}
 }

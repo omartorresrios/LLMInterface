@@ -48,8 +48,7 @@ struct ChatContainersView: View {
 							.frame(maxWidth: .infinity)
 					}
 				}
-				.background(Color.green.opacity(0.3))
-				
+				.background(Color(hex: "F9F2E2"))
 				if showEditModal.show {
 					Color.black.opacity(0.4)
 						.edgesIgnoringSafeArea(.all)
