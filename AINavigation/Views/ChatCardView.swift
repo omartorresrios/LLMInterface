@@ -10,6 +10,7 @@ import SwiftUI
 struct SelectableTextView: NSViewRepresentable {
 	let text: String
 	@Binding var selectedText: String
+	@Binding var showExplainPopup: Bool
 
 	func makeNSView(context: Context) -> NSTextView {
 		let customFont = NSFont(name: "Helvetica Neue", size: 16)
@@ -23,18 +24,26 @@ struct SelectableTextView: NSViewRepresentable {
 		// Configure text view for selection highlighting
 		textView.backgroundColor = NSColor.clear
 		
+		textView.textColor = NSColor.textColor
+		
 		// Customize selection attributes
 		textView.insertionPointColor = .green
 		textView.selectedTextAttributes = [
 			.backgroundColor: NSColor.green.withAlphaComponent(0.3),
-			.foregroundColor: NSColor.black
+			.foregroundColor: NSColor.textColor
 		]
-
 		return textView
 	}
 
 	func updateNSView(_ nsView: NSTextView, context: Context) {
-		nsView.string = text
+		nsView.textColor = NSColor.textColor
+		nsView.selectedTextAttributes = [
+			.backgroundColor: NSColor.green.withAlphaComponent(0.3),
+			.foregroundColor: NSColor.textColor
+		]
+		if selectedText.isEmpty {
+			nsView.setSelectedRange(NSRange(location: NSNotFound, length: 0))
+		}
 	}
 
 	func makeCoordinator() -> Coordinator {
@@ -52,10 +61,12 @@ struct SelectableTextView: NSViewRepresentable {
 			guard let textView = notification.object as? NSTextView else { return }
 			let selectedRange = textView.selectedRange()
 
-			DispatchQueue.main.async {
+			DispatchQueue.main.async { [weak self] in
+				guard let self = self else { return }
 				if selectedRange.length > 0 {
 					let selectedText = (textView.string as NSString).substring(with: selectedRange)
 					self.parent.selectedText = selectedText
+					self.parent.showExplainPopup = true
 				} else {
 					self.parent.selectedText = ""
 				}
@@ -67,15 +78,17 @@ struct SelectableTextView: NSViewRepresentable {
 
 struct ChatCardView: View {
 	let card: Chat
-	@State var isExpanded: Bool = false
+	@Binding var width: CGFloat
+	@Binding var disablePromptEntry: Bool
+	@State private var isExpanded = false
+	@State private var showDeepDiveView = false
+	@State private var showThreadView = false
+	@State private var showExplainPopup = false
+	@State private var highlightedText = ""
+	@State private var selectableTextViewHeight: CGFloat = 0
 	var onRemove: () -> Void
 	var onBranchOut: () -> Void
-	@State var showDeepDiveView = false
-	@Binding var width: CGFloat
 	
-	@State private var selectedText: String = ""
-	@State private var textHeight: CGFloat = 0
-
 	var body: some View {
 		VStack(alignment: .leading, spacing: 8) {
 			HStack {
@@ -83,13 +96,20 @@ struct ChatCardView: View {
 					.font(.headline)
 				Spacer()
 				Button(action: {
+					if !isExpanded {
+						isExpanded = true
+					}
+					if showExplainPopup {
+						showExplainPopup = false
+					}
 					onBranchOut()
-					showDeepDiveView = true
+					showThreadView = true
+					highlightedText = ""
 				}) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(.red)
 				}
-				.disabled(showDeepDiveView)
+				.disabled(showThreadView)
 				Button(action: onRemove) {
 					Image(systemName: "trash")
 						.foregroundColor(.red)
@@ -102,18 +122,53 @@ struct ChatCardView: View {
 						.foregroundColor(.blue)
 				}
 			}
+			.disabled(showDeepDiveView)
 			if isExpanded {
 				HStack {
 					SelectableTextView(text: card.output,
-									   selectedText: $selectedText)
-					.frame(height: textHeight)
+									   selectedText: $highlightedText,
+									   showExplainPopup: $showExplainPopup)
+					.frame(height: selectableTextViewHeight)
 					.clipped()
-					//					.background(.red)
+					.overlay(
+						Group {
+							if showExplainPopup && !highlightedText.isEmpty {
+								VStack {
+									Button("Explain") {
+										showExplainPopup = false
+										showDeepDiveView = true
+										disablePromptEntry = true
+									}
+									.padding()
+									.background(.red)
+									.cornerRadius(8)
+									.shadow(radius: 5)
+								}
+								.position(x: 50, y: 50)
+							} else if showDeepDiveView {
+								VStack {
+									Text("This is a random explanation from the model.")
+										.padding()
+									Button("Close") {
+										showDeepDiveView = false
+										highlightedText = ""
+										disablePromptEntry = false
+									}
+									.buttonStyle(.bordered)
+								}
+								.padding()
+								.background(Color(NSColor.windowBackgroundColor))
+								.foregroundColor(Color(NSColor.labelColor))
+								.cornerRadius(8)
+								.shadow(radius: 5)
+							}
+						}
+					)
 					
-					if showDeepDiveView {
+					if showThreadView {
 						VStack {
 							Button {
-								showDeepDiveView.toggle()
+								showThreadView.toggle()
 							} label: {
 								Image(systemName: "arrow.right")
 							}
@@ -134,16 +189,18 @@ struct ChatCardView: View {
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
 		.onAppear {
-			textHeight = calculateHeight(for: card.output, with: width)
+			selectableTextViewHeight = calculateHeight(for: card.output, 
+													   with: width)
 		}
 		.onChange(of: width) { _, newValue in
-			textHeight = calculateHeight(for: card.output, with: newValue)
+			selectableTextViewHeight = calculateHeight(for: card.output, 
+													   with: newValue)
 		}
 	}
 	
 	private func calculateHeight(for text: String, 
-								with width: CGFloat) -> CGFloat {
-		let customFont = NSFont(name: "Helvetica Neue", size: 16)
+								 with width: CGFloat) -> CGFloat {
+		guard let customFont = NSFont(name: "Helvetica Neue", size: 16) else { return 0 }
 		let attributes: [NSAttributedString.Key: Any] = [.font: customFont]
 		let size = CGSize(width: width - 40, height: .greatestFiniteMagnitude)
 		let boundingRect = (text as NSString).boundingRect(with: size,
@@ -156,7 +213,8 @@ struct ChatCardView: View {
 
 #Preview {
 	ChatCardView(card: Chat.cards.first!,
-				 isExpanded: false,
+				 width: .constant(0),
+				 disablePromptEntry: .constant(false), 
 				 onRemove: { },
-				 onBranchOut: { }, width: .constant(20))
+				 onBranchOut: { })
 }

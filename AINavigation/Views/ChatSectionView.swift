@@ -15,6 +15,7 @@ struct ChatSectionView: View {
 	@State var chatCardViewWidth: CGFloat = 0.0
 	var addNewPrompt: (Chat) -> Void
 	@State private var mainContentHeight: CGFloat = 0
+	@State private var disablePromptEntry = false
 	@FocusState private var isFocused: Bool
 
 	var body: some View {
@@ -60,10 +61,11 @@ struct ChatSectionView: View {
 					ScrollView {
 						VStack(spacing: 10) {
 							ForEach(chats.indices, id:\.self) { index in
-								ChatCardView(card : chats[index],
-											onRemove: { removePrompt(at: index) },
-											onBranchOut: { branchOut(from: scrollProxy, at: index) },
-											width: $chatCardViewWidth)
+								ChatCardView(card: chats[index],
+											 width: $chatCardViewWidth,
+											 disablePromptEntry: $disablePromptEntry,
+											 onRemove: { removePrompt(at: index) },
+											 onBranchOut: { branchOut(from: scrollProxy, at: index) })
 								.transition(.opacity.combined(with: .move(edge: .top)))
 								.id(index)
 								.background(
@@ -128,6 +130,7 @@ struct ChatSectionView: View {
 			.buttonStyle(.plain)
 			.disabled(prompt.isEmpty)
 		}
+		.disabled(disablePromptEntry)
 		.padding(.horizontal, chats.count > 0 ? 0 : 16)
 		.onAppear {
 			DispatchQueue.main.async {
