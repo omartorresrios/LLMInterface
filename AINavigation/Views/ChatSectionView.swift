@@ -14,18 +14,17 @@ struct ChatSectionView: View {
 	@State private var prompt: String = ""
 	@State var chatCardViewWidth: CGFloat = 0.0
 	var addNewPrompt: (Chat) -> Void
-	@State private var mainContentHeight: CGFloat = 0
 	@State private var disablePromptEntry = false
 	@FocusState private var isFocused: Bool
 
 	var body: some View {
 		GeometryReader { geometry in
 			HStack(alignment: .top, spacing: 0) {
-				if mainContentHeight > geometry.size.height {
+				if chatContainer.showSidebar {
 					sidebarContent
 						.frame(width: geometry.size.width * 0.2)
 				}
-				mainContent
+				mainContent(geometry)
 					.frame(maxWidth: .infinity)
 			}
 		}
@@ -50,7 +49,7 @@ struct ChatSectionView: View {
 		.padding()
 	}
 
-	private var mainContent: some View {
+	private func mainContent(_ geometry: GeometryProxy) -> some View {
 		VStack(spacing: 10) {
 			if chatContainer.section.chats.isEmpty {
 				Spacer()
@@ -87,11 +86,11 @@ struct ChatSectionView: View {
 						.background(
 							GeometryReader { contentGeometry in
 								Color.clear
-									.onChange(of: contentGeometry.size.height) { _, newHeight in
-										mainContentHeight = newHeight
-									}
 									.onAppear {
-										mainContentHeight = contentGeometry.size.height
+										chatContainer.showSidebar = contentGeometry.size.height > geometry.size.height
+									}
+									.onChange(of: contentGeometry.size.height) { _, newHeight in
+										chatContainer.showSidebar = newHeight > geometry.size.height
 									}
 							}
 						)
@@ -154,7 +153,7 @@ struct ChatSectionView: View {
 	}
 	
 	private func removePrompt(at index: Int) {
-		_ = withAnimation(.easeInOut(duration: 0.1)) {
+		withAnimation(.easeInOut(duration: 0.1)) {
 			chatContainer.section.removeChat(at: index)
 		}
 		if chatContainer.section.chats.isEmpty {

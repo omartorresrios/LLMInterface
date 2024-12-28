@@ -14,6 +14,7 @@ final class ChatContainer: Identifiable {
 	var name = "Unnamed chat"
 	var section: ChatSection
 	var searchText = ""
+	var showSidebar = false
 	
 	init() {
 		section = ChatSection()

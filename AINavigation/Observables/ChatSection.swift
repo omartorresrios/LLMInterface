@@ -14,6 +14,7 @@ class ChatSection: Identifiable {
 	var chats: [Chat] = []
 	var activeAIExplainPopupViewId: Int?
 	var highlightedCardId: Int?
+	private var expandedPrompts: Set<Int> = []
 	
 	func addPrompt(chat: Chat) {
 		chats.append(chat)
@@ -37,5 +38,17 @@ class ChatSection: Identifiable {
 	func clearAllSelections() {
 		highlightedCardId = nil
 		activeAIExplainPopupViewId = nil
+	}
+	
+	func toggleExpanded(_ id: Int) {
+		if expandedPrompts.contains(id) {
+			expandedPrompts.remove(id)
+		} else {
+			expandedPrompts.insert(id)
+		}
+	}
+	
+	func isExpanded(_ id: Int) -> Bool {
+		expandedPrompts.contains(id)
 	}
 }

@@ -103,7 +103,6 @@ struct ChatCardView: View {
 	@Binding var width: CGFloat
 	@Binding var disablePromptEntry: Bool
 	@Bindable var chatSection: ChatSection
-	@State private var isExpanded = false
 	@State private var showDeepDiveView = false
 	@State private var showThreadView = false
 	@State private var showAIExplainPopupView = false
@@ -119,8 +118,8 @@ struct ChatCardView: View {
 					.font(.headline)
 				Spacer()
 				Button(action: {
-					if !isExpanded {
-						isExpanded = true
+					if !chatSection.isExpanded(card.id) {
+						chatSection.toggleExpanded(card.id)
 					}
 					if showAIExplainPopupView {
 						showAIExplainPopupView = false
@@ -143,15 +142,15 @@ struct ChatCardView: View {
 						.foregroundColor(.red)
 				}
 				Button {
-					isExpanded.toggle()
+					chatSection.toggleExpanded(card.id)
 				} label: {
-					Text(isExpanded ? "Collapse" : "Show more")
+					Text(chatSection.isExpanded(card.id) ? "Collapse" : "Show more")
 						.font(.footnote)
 						.foregroundColor(.blue)
 				}
 			}
 			.disabled(showDeepDiveView)
-			if isExpanded {
+			if chatSection.isExpanded(card.id) {
 				HStack {
 					selectableTextView
 					if showThreadView {

@@ -17,6 +17,7 @@ struct ChatView: View {
 	}
 	
 	private func addNewPrompt(with chat: Chat) {
+		chatContainer.showSidebar = false
 		chatContainer.section.addPrompt(chat: chat)
 	}
 }
