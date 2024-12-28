@@ -8,41 +8,42 @@
 import SwiftUI
 
 struct SelectableTextView: NSViewRepresentable {
-	let text: String
 	@Binding var selectedText: String
 	@Binding var showExplainPopup: Bool
+	let text: String
+	var onViewClick: () -> Void
 
-	func makeNSView(context: Context) -> NSTextView {
+	func makeNSView(context: Context) -> ClickableTextView {
 		let customFont = NSFont(name: "Helvetica Neue", size: 16)
-		let textView = NSTextView()
+		let textView = ClickableTextView()
 		textView.string = text
 		textView.font = customFont
 		textView.isEditable = false
 		textView.isSelectable = true
 		textView.delegate = context.coordinator
 		
-		// Configure text view for selection highlighting
 		textView.backgroundColor = NSColor.clear
-		
 		textView.textColor = NSColor.textColor
-		
-		// Customize selection attributes
 		textView.insertionPointColor = .green
 		textView.selectedTextAttributes = [
 			.backgroundColor: NSColor.green.withAlphaComponent(0.3),
 			.foregroundColor: NSColor.textColor
 		]
+		
+		textView.setupClickGesture()
+		textView.onViewClick = onViewClick
 		return textView
 	}
 
-	func updateNSView(_ nsView: NSTextView, context: Context) {
+	func updateNSView(_ nsView: ClickableTextView, context: Context) {
+		nsView.onViewClick = onViewClick
 		nsView.textColor = NSColor.textColor
 		nsView.selectedTextAttributes = [
 			.backgroundColor: NSColor.green.withAlphaComponent(0.3),
 			.foregroundColor: NSColor.textColor
 		]
 		if selectedText.isEmpty {
-			nsView.setSelectedRange(NSRange(location: NSNotFound, length: 0))
+			nsView.setSelectedRange(NSRange(location: 0, length: 0))
 		}
 	}
 
@@ -73,17 +74,39 @@ struct SelectableTextView: NSViewRepresentable {
 			}
 		}
 	}
-}
+	
+	final class ClickableTextView: NSTextView {
+		var onViewClick: (() -> Void)?
+		private var clickGestureRecognizer: NSClickGestureRecognizer?
 
+		func setupClickGesture() {
+			if clickGestureRecognizer == nil {
+				clickGestureRecognizer = NSClickGestureRecognizer(target: self,
+																  action: #selector(handleClick(_:)))
+				clickGestureRecognizer?.numberOfClicksRequired = 1
+				if let recognizer = clickGestureRecognizer {
+					addGestureRecognizer(recognizer)
+				}
+			}
+		}
+
+		@objc private func handleClick(_ gestureRecognizer: NSClickGestureRecognizer) {
+			if gestureRecognizer.state == .ended {
+				onViewClick?()
+			}
+		}
+	}
+}
 
 struct ChatCardView: View {
 	let card: Chat
 	@Binding var width: CGFloat
 	@Binding var disablePromptEntry: Bool
+	@Bindable var chatSection: ChatSection
 	@State private var isExpanded = false
 	@State private var showDeepDiveView = false
 	@State private var showThreadView = false
-	@State private var showExplainPopup = false
+	@State private var showAIExplainPopupView = false
 	@State private var highlightedText = ""
 	@State private var selectableTextViewHeight: CGFloat = 0
 	var onRemove: () -> Void
@@ -99,8 +122,8 @@ struct ChatCardView: View {
 					if !isExpanded {
 						isExpanded = true
 					}
-					if showExplainPopup {
-						showExplainPopup = false
+					if showAIExplainPopupView {
+						showAIExplainPopupView = false
 					}
 					onBranchOut()
 					showThreadView = true
@@ -110,13 +133,18 @@ struct ChatCardView: View {
 						.foregroundColor(.red)
 				}
 				.disabled(showThreadView)
-				Button(action: onRemove) {
+				Button {
+					onRemove()
+					if showDeepDiveView {
+						showDeepDiveView = false
+					}
+				} label: {
 					Image(systemName: "trash")
 						.foregroundColor(.red)
 				}
-				Button(action: {
+				Button {
 					isExpanded.toggle()
-				}) {
+				} label: {
 					Text(isExpanded ? "Collapse" : "Show more")
 						.font(.footnote)
 						.foregroundColor(.blue)
@@ -125,46 +153,7 @@ struct ChatCardView: View {
 			.disabled(showDeepDiveView)
 			if isExpanded {
 				HStack {
-					SelectableTextView(text: card.output,
-									   selectedText: $highlightedText,
-									   showExplainPopup: $showExplainPopup)
-					.frame(height: selectableTextViewHeight)
-					.clipped()
-					.overlay(
-						Group {
-							if showExplainPopup && !highlightedText.isEmpty {
-								VStack {
-									Button("Explain") {
-										showExplainPopup = false
-										showDeepDiveView = true
-										disablePromptEntry = true
-									}
-									.padding()
-									.background(.red)
-									.cornerRadius(8)
-									.shadow(radius: 5)
-								}
-								.position(x: 50, y: 50)
-							} else if showDeepDiveView {
-								VStack {
-									Text("This is a random explanation from the model.")
-										.padding()
-									Button("Close") {
-										showDeepDiveView = false
-										highlightedText = ""
-										disablePromptEntry = false
-									}
-									.buttonStyle(.bordered)
-								}
-								.padding()
-								.background(Color(NSColor.windowBackgroundColor))
-								.foregroundColor(Color(NSColor.labelColor))
-								.cornerRadius(8)
-								.shadow(radius: 5)
-							}
-						}
-					)
-					
+					selectableTextView
 					if showThreadView {
 						VStack {
 							Button {
@@ -196,6 +185,66 @@ struct ChatCardView: View {
 			selectableTextViewHeight = calculateHeight(for: card.output, 
 													   with: newValue)
 		}
+		.onChange(of: highlightedText) { _, newValue in
+			if !newValue.isEmpty {
+				chatSection.setHighlightedCard(card.id)
+				chatSection.setActiveAIExplainPopupViewId(card.id)
+			}
+		}
+		.onChange(of: chatSection.highlightedCardId) { _, newValue in
+			if newValue != card.id {
+				clearHighlightAndDeepDive()
+			}
+		}
+	}
+	
+	private var selectableTextView: some View {
+		SelectableTextView(selectedText: $highlightedText,
+						   showExplainPopup: $showAIExplainPopupView,
+						   text: card.output,
+						   onViewClick: { chatSection.clearAllSelections() })
+		.frame(height: selectableTextViewHeight)
+		.clipped()
+		.overlay(
+			Group {
+				if showAIExplainPopupView && !highlightedText.isEmpty {
+					VStack {
+						Button("Explain") {
+							showAIExplainPopupView = false
+							showDeepDiveView = true
+							disablePromptEntry = true
+						}
+						.padding()
+						.background(.red)
+						.cornerRadius(8)
+						.shadow(radius: 5)
+					}
+					.position(x: 50, y: 50)
+				} else if showDeepDiveView && 
+							chatSection.activeAIExplainPopupViewId == card.id {
+					VStack {
+						Text("This is a random explanation from the model.")
+							.padding()
+						Button("Close") {
+							showDeepDiveView = false
+							highlightedText = ""
+							disablePromptEntry = false
+						}
+						.buttonStyle(.bordered)
+					}
+					.padding()
+					.background(Color(NSColor.windowBackgroundColor))
+					.foregroundColor(Color(NSColor.labelColor))
+					.cornerRadius(8)
+					.shadow(radius: 5)
+				}
+			}
+		)
+	}
+	
+	private func clearHighlightAndDeepDive() {
+		highlightedText = ""
+		showAIExplainPopupView = false
 	}
 	
 	private func calculateHeight(for text: String, 
@@ -214,7 +263,8 @@ struct ChatCardView: View {
 #Preview {
 	ChatCardView(card: Chat.cards.first!,
 				 width: .constant(0),
-				 disablePromptEntry: .constant(false), 
+				 disablePromptEntry: .constant(false),
+				 chatSection: ChatSection(),
 				 onRemove: { },
 				 onBranchOut: { })
 }

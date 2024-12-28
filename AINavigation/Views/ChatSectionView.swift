@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ChatSectionView: View {
-	@Binding var chats: [Chat]
+	@Bindable var chatContainer: ChatContainer
 	@State var selectedPromptIndex: Int?
 	@State private var currentPromptIndex: Int = 0
 	@State private var prompt: String = ""
@@ -37,11 +37,11 @@ struct ChatSectionView: View {
 				.font(.headline)
 				.padding()
 			Divider()
-			ForEach(chats.indices, id: \.self) { index in
+			ForEach(chatContainer.section.chats.indices, id: \.self) { index in
 				Button(action: {
 					selectedPromptIndex = index
 				}) {
-					Text(chats[index].prompt)
+					Text(chatContainer.section.chats[index].prompt)
 						.foregroundColor(selectedPromptIndex == index ? .blue : .primary)
 				}
 				.padding(.vertical, 4)
@@ -52,7 +52,7 @@ struct ChatSectionView: View {
 
 	private var mainContent: some View {
 		VStack(spacing: 10) {
-			if chats.isEmpty {
+			if chatContainer.section.chats.isEmpty {
 				Spacer()
 				promptInputView
 				Spacer()
@@ -60,10 +60,11 @@ struct ChatSectionView: View {
 				ScrollViewReader { scrollProxy in
 					ScrollView {
 						VStack(spacing: 10) {
-							ForEach(chats.indices, id:\.self) { index in
-								ChatCardView(card: chats[index],
+							ForEach(chatContainer.section.chats.indices, id:\.self) { index in
+								ChatCardView(card: chatContainer.section.chats[index],
 											 width: $chatCardViewWidth,
 											 disablePromptEntry: $disablePromptEntry,
+											 chatSection: chatContainer.section,
 											 onRemove: { removePrompt(at: index) },
 											 onBranchOut: { branchOut(from: scrollProxy, at: index) })
 								.transition(.opacity.combined(with: .move(edge: .top)))
@@ -131,7 +132,7 @@ struct ChatSectionView: View {
 			.disabled(prompt.isEmpty)
 		}
 		.disabled(disablePromptEntry)
-		.padding(.horizontal, chats.count > 0 ? 0 : 16)
+		.padding(.horizontal, chatContainer.section.chats.count > 0 ? 0 : 16)
 		.onAppear {
 			DispatchQueue.main.async {
 				isFocused = true
@@ -154,9 +155,9 @@ struct ChatSectionView: View {
 	
 	private func removePrompt(at index: Int) {
 		_ = withAnimation(.easeInOut(duration: 0.1)) {
-			chats.remove(at: index)
+			chatContainer.section.removeChat(at: index)
 		}
-		if chats.isEmpty {
+		if chatContainer.section.chats.isEmpty {
 			isFocused = true
 		 }
 	}

@@ -11,7 +11,7 @@ struct ChatView: View {
 	@Bindable var chatContainer: ChatContainer
 	
 	var body: some View {
-		ChatSectionView(chats: $chatContainer.section.chats,
+		ChatSectionView(chatContainer: chatContainer,
 						addNewPrompt: { newChat in addNewPrompt(with: newChat) })
 		.searchable(text: $chatContainer.searchText, prompt: "Search in chat history")
 	}
