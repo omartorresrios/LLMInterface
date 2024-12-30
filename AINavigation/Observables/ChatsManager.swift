@@ -9,7 +9,7 @@ import Foundation
 import Observation
 
 @Observable
-final class ChatsManager: ObservableObject {
+final class ChatsManager {
 	var chatContainers: [ChatContainer] = []
 	var selectedChatContainerId: UUID?
 	
@@ -31,5 +31,10 @@ final class ChatsManager: ObservableObject {
 		let newChatContainer = ChatContainer()
 		chatContainers.append(newChatContainer)
 		selectedChatContainerId = newChatContainer.id
+	}
+	
+	func getSelectedChat() -> ChatContainer? {
+		guard let selectedId = selectedChatContainerId else { return nil }
+		return chatContainers.first(where: { $0.id == selectedId })
 	}
 }

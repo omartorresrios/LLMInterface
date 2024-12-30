@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ChatSectionView: View {
 	@Bindable var chatContainer: ChatContainer
-	@State var selectedPromptIndex: Int?
 	@State private var currentPromptIndex: Int = 0
 	@State private var prompt: String = ""
 	@State var chatCardViewWidth: CGFloat = 0.0
@@ -36,12 +35,14 @@ struct ChatSectionView: View {
 				.font(.headline)
 				.padding()
 			Divider()
-			ForEach(chatContainer.section.chats.indices, id: \.self) { index in
+			ForEach(chatContainer.section.chats, id: \.id) { chat in
 				Button(action: {
-					selectedPromptIndex = index
+					if let index = chatContainer.section.chats.firstIndex(where: { $0.id == chat.id }) {
+						chatContainer.selectedPromptIndex = index
+					}
 				}) {
-					Text(chatContainer.section.chats[index].prompt)
-						.foregroundColor(selectedPromptIndex == index ? .blue : .primary)
+					Text(chat.prompt)
+						.foregroundColor(chatContainer.selectedPromptIndex == chatContainer.section.chats.firstIndex(where: { $0.id == chat.id }) ? .blue : .primary)
 				}
 				.padding(.vertical, 4)
 			}
@@ -52,20 +53,21 @@ struct ChatSectionView: View {
 	private func mainContent(_ geometry: GeometryProxy) -> some View {
 		VStack(spacing: 10) {
 			if chatContainer.section.chats.isEmpty {
-				Spacer()
 				promptInputView
-				Spacer()
+					.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 			} else {
 				ScrollViewReader { scrollProxy in
 					ScrollView {
 						VStack(spacing: 10) {
 							ForEach(chatContainer.section.chats.indices, id:\.self) { index in
-								ChatCardView(card: chatContainer.section.chats[index],
+								let chat = chatContainer.section.chats[index]
+								ChatCardView(card: chat,
 											 width: $chatCardViewWidth,
 											 disablePromptEntry: $disablePromptEntry,
 											 chatSection: chatContainer.section,
 											 onRemove: { removePrompt(at: index) },
-											 onBranchOut: { branchOut(from: scrollProxy, at: index) })
+											 onBranchOut: { branchOut(from: scrollProxy, at: index) }
+								)
 								.transition(.opacity.combined(with: .move(edge: .top)))
 								.id(index)
 								.background(
@@ -95,11 +97,17 @@ struct ChatSectionView: View {
 							}
 						)
 					}
-					.onChange(of: selectedPromptIndex) { _, newIndex in
+					.onChange(of: chatContainer.selectedPromptIndex) { _, newIndex in
 						if let newIndex = newIndex {
 							withAnimation {
-								scrollProxy.scrollTo(newIndex, anchor: .top)
-								selectedPromptIndex = nil
+								scrollProxy.scrollTo(newIndex, anchor: .center)
+							}
+						}
+					}
+					.onAppear {
+						if let index = chatContainer.selectedPromptIndex {
+							withAnimation {
+								scrollProxy.scrollTo(index, anchor: .center)
 							}
 						}
 					}

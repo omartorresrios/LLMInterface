@@ -42,8 +42,7 @@ struct ChatContainersView: View {
 								showEditModal: $showEditModal)
 						.frame(width: geometry.size.width * 0.2)
 					Divider()
-					if let selectedChatId = chatsManager.selectedChatContainerId,
-					   let chatContainer = chatsManager.chatContainers.first(where: { $0.id == selectedChatId })  {
+					if let chatContainer = chatsManager.getSelectedChat() {
 						ChatView(chatContainer: chatContainer)
 							.frame(maxWidth: .infinity)
 					}

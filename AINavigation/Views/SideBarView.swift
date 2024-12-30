@@ -69,7 +69,9 @@ struct SidebarView: View {
 			.listStyle(.sidebar)
 			.scrollContentBackground(.hidden)
 			.toolbar {
-				Button(action: { chatsManager.addChatContainer() }) {
+				Button(action: {
+					chatsManager.addChatContainer()
+				}) {
 					Label("Add Chat", systemImage: "plus")
 				}
 				.disabled(chatsManager.chatContainers.count > 2)
