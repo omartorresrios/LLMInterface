@@ -128,7 +128,7 @@ struct ChatSectionView: View {
 								.padding()
 								.background(.blue.opacity(0.3))
 							}
-							.frame(width: geometry.size.width)
+							.frame(width: geometry.size.width * (chatContainer.showSidebar ? 0.8 : 1.0))
 						},
 										  selectedPromptIndex: scrollToIndex,
 										  height: $scrollViewHeight, 
