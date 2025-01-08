@@ -100,27 +100,23 @@ struct SelectableTextView: NSViewRepresentable {
 
 struct ChatCardView: View {
 	let card: Chat
-	@Binding var width: CGFloat
+	@State var width: CGFloat
 	@Binding var disablePromptEntry: Bool
 	@Bindable var chatSection: ChatSection
 	@State private var showDeepDiveView = false
 	@State private var showThreadView = false
 	@State private var showAIExplainPopupView = false
 	@State private var highlightedText = ""
-	@State private var selectableTextViewHeight: CGFloat = 0
 	var onRemove: () -> Void
 	var onBranchOut: () -> Void
+	@State private var isExpanded = false
 	
 	var body: some View {
-		VStack(alignment: .leading, spacing: 8) {
+		VStack(alignment: .leading) {
 			HStack {
 				Text(card.prompt)
 					.font(.headline)
-				Spacer()
 				Button(action: {
-					if !chatSection.isExpanded(card.id) {
-						chatSection.toggleExpanded(card.id)
-					}
 					if showAIExplainPopupView {
 						showAIExplainPopupView = false
 					}
@@ -143,6 +139,7 @@ struct ChatCardView: View {
 				}
 				Button {
 					chatSection.toggleExpanded(card.id)
+					isExpanded.toggle()
 				} label: {
 					Text(chatSection.isExpanded(card.id) ? "Collapse" : "Show more")
 						.font(.footnote)
@@ -150,40 +147,24 @@ struct ChatCardView: View {
 				}
 			}
 			.disabled(showDeepDiveView)
-			if chatSection.isExpanded(card.id) {
-				HStack {
-					selectableTextView
-					if showThreadView {
-						VStack {
-							Button {
-								showThreadView.toggle()
-							} label: {
-								Image(systemName: "arrow.right")
-							}
-							Text("This is just a test of the pop up view.")
+			HStack(alignment: .top) {
+				selectableTextView
+				if showThreadView {
+					VStack {
+						Button {
+							showThreadView.toggle()
+						} label: {
+							Image(systemName: "arrow.right")
 						}
+						Text("This is just a test of the pop up view.")
 					}
-				}
-			} else {
-				VStack {
-					Text(card.output)
-						.font(.body)
-						.lineLimit(2)
-						.truncationMode(.tail)
 				}
 			}
 		}
+		.frame(maxWidth: .infinity, alignment: .leading)
 		.padding()
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
-		.onAppear {
-			selectableTextViewHeight = calculateHeight(for: card.output, 
-													   with: width)
-		}
-		.onChange(of: width) { _, newValue in
-			selectableTextViewHeight = calculateHeight(for: card.output, 
-													   with: newValue)
-		}
 		.onChange(of: highlightedText) { _, newValue in
 			if !newValue.isEmpty {
 				chatSection.setHighlightedCard(card.id)
@@ -197,8 +178,15 @@ struct ChatCardView: View {
 		}
 	}
 	
+	private func truncatedOutput() -> String {
+		if card.output.count > 100 {
+			return card.output.prefix(100) + "..."
+		}
+		return card.output
+	}
+	
 	private var selectableTextView: some View {
-		SelectableTextView(selectedText: $highlightedText,
+		return SelectableTextView(selectedText: $highlightedText,
 						   showExplainPopup: $showAIExplainPopupView,
 						   text: card.output,
 						   onViewClick: { chatSection.clearAllSelections() })
@@ -250,19 +238,23 @@ struct ChatCardView: View {
 								 with width: CGFloat) -> CGFloat {
 		guard let customFont = NSFont(name: "Helvetica Neue", size: 16) else { return 0 }
 		let attributes: [NSAttributedString.Key: Any] = [.font: customFont]
-		let size = CGSize(width: width - 40, height: .greatestFiniteMagnitude)
+		let size = CGSize(width: width - 40, height: .greatestFiniteMagnitude) // Adjust for padding
 		let boundingRect = (text as NSString).boundingRect(with: size,
 														   options: [.usesLineFragmentOrigin, .usesFontLeading],
 														   attributes: attributes,
 														   context: nil)
 		return ceil(boundingRect.height)
 	}
+	
+	private var selectableTextViewHeight: CGFloat {
+		calculateHeight(for: isExpanded ? card.output : truncatedOutput(), with: width)
+	}
 }
 
 #Preview {
 	ChatCardView(card: Chat.cards.first!,
-				 width: .constant(0),
-				 disablePromptEntry: .constant(false),
+				 width: 0,
+				 disablePromptEntry: .constant(false), 
 				 chatSection: ChatSection(),
 				 onRemove: { },
 				 onBranchOut: { })

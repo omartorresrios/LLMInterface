@@ -7,6 +7,95 @@
 
 import SwiftUI
 
+struct ScrollViewWrapper<Content: View>: NSViewRepresentable {
+	let content: Content
+	var selectedPromptIndex: Int?
+	@Binding var height: CGFloat
+	var itemPositions: [Int: CGRect] = [:]
+	
+	init(@ViewBuilder content: () -> Content,
+		 selectedPromptIndex: Int? = nil,
+		 height: Binding<CGFloat>,
+		 itemPositions: [Int: CGRect]) {
+		self.content = content()
+		self.selectedPromptIndex = selectedPromptIndex
+		_height = height
+		self.itemPositions = itemPositions
+	}
+	
+	func makeNSView(context: Context) -> NSScrollView {
+		let scrollView = NSScrollView()
+		scrollView.borderType = .bezelBorder
+		scrollView.hasVerticalScroller = true
+		scrollView.hasHorizontalScroller = false
+		updateContent(scrollView)
+		return scrollView
+	}
+	
+	func updateNSView(_ nsView: NSScrollView, context: Context) {
+		updateContent(nsView)
+		// the old way
+		//		if let selectedIndex = selectedPromptIndex,
+		//		   let frame = itemFrames[selectedIndex] {
+		//			DispatchQueue.main.async {
+		//				let itemHeight = frame.height
+		//				let yOffset = frame.minY - itemHeight
+		//				let scrollPoint = NSPoint(x: 0, y: yOffset)
+		//				nsView.contentView.scroll(scrollPoint)
+		//			}
+		//		}
+		if let selectedIndex = selectedPromptIndex,
+		   let position = itemPositions[selectedIndex] {
+			DispatchQueue.main.async {
+				// Get the visible rect of the scroll view
+				let visibleRect = nsView.contentView.bounds
+				
+				// Get document view height (total scrollable height)
+				let documentHeight = nsView.documentView?.frame.height ?? 0
+				
+				// Calculate how much space would be left below the selected item
+				let spaceBelow = documentHeight - position.maxY
+				
+				// Calculate the ideal scroll position
+				let scrollPoint: NSPoint
+				
+				if spaceBelow < visibleRect.height {
+					// If there's not enough content below to fill the visible area,
+					// scroll to show the bottom of the content
+					let y = max(0, documentHeight - visibleRect.height)
+					scrollPoint = NSPoint(x: 0, y: y)
+				} else {
+					// If there's enough content below, position the selected item
+					// with some padding from the top
+					let itemHeight = position.height
+					let y = max(0, position.minY - itemHeight)
+					scrollPoint = NSPoint(x: 0, y: y)
+				}
+				
+				nsView.contentView.scroll(to: scrollPoint)
+				nsView.reflectScrolledClipView(nsView.contentView)
+			}
+		}
+	}
+	
+	private func updateContent(_ scrollView: NSScrollView) {
+		let contentView = NSHostingView(rootView: content)
+		contentView.translatesAutoresizingMaskIntoConstraints = false
+		
+		// Remove old content view if it exists
+		scrollView.documentView?.removeFromSuperview()
+		
+		// Set new content view
+		scrollView.documentView = contentView
+		
+		// Update frame to fit content
+		contentView.frame = NSRect(x: 0, y: 0, width: scrollView.bounds.width, height: contentView.fittingSize.height)
+		DispatchQueue.main.async {
+			height = contentView.frame.height
+		}
+	}
+}
+
 struct ChatSectionView: View {
 	@Bindable var chatContainer: ChatContainer
 	@State private var currentPromptIndex: Int = 0
@@ -15,7 +104,10 @@ struct ChatSectionView: View {
 	var addNewPrompt: (Chat) -> Void
 	@State private var disablePromptEntry = false
 	@FocusState private var isFocused: Bool
-
+	@State private var scrollToIndex: Int?
+	@State var scrollViewHeight: CGFloat = 0
+	@State private var itemPositions: [Int: CGRect] = [:]
+	
 	var body: some View {
 		GeometryReader { geometry in
 			HStack(alignment: .top, spacing: 0) {
@@ -23,10 +115,48 @@ struct ChatSectionView: View {
 					sidebarContent
 						.frame(width: geometry.size.width * 0.2)
 				}
-				mainContent(geometry)
-					.frame(maxWidth: .infinity)
+				VStack(alignment: .leading, spacing: 0) {
+					if chatContainer.section.chats.isEmpty {
+						promptInputView
+							.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+					} else {
+						ScrollViewWrapper(content: {
+							VStack(alignment: .leading, spacing: 8) {
+								ForEach(chatContainer.section.chats.indices, id: \.self) { index in
+									chatCardView(with: index, geometry: geometry)
+								}
+								.padding()
+								.background(.blue.opacity(0.3))
+							}
+							.frame(width: geometry.size.width)
+						},
+										  selectedPromptIndex: scrollToIndex,
+										  height: $scrollViewHeight, 
+										  itemPositions: itemPositions)
+						.onChange(of: scrollViewHeight) { _, newHeight in
+							chatContainer.showSidebar = newHeight > geometry.size.height
+						}
+						promptInputView
+					}
+				}
 			}
 		}
+	}
+	
+	private func chatCardView(with index: Int, geometry: GeometryProxy) -> some View {
+		ChatCardView(card: chatContainer.section.chats[index],
+					 width: geometry.size.width * (chatContainer.showSidebar ? 0.8 : 1.0),
+					 disablePromptEntry: $disablePromptEntry,
+					 chatSection: chatContainer.section,
+					 onRemove: {},
+					 onBranchOut: {})
+		.background(
+			GeometryReader { geometry in
+				Color.clear.onAppear {
+					itemPositions[index] = geometry.frame(in: .global)
+				}
+			}
+		)
 	}
 	
 	private var sidebarContent: some View {
@@ -39,6 +169,7 @@ struct ChatSectionView: View {
 				Button(action: {
 					if let index = chatContainer.section.chats.firstIndex(where: { $0.id == chat.id }) {
 						chatContainer.selectedPromptIndex = index
+						scrollToIndex = index
 					}
 				}) {
 					Text(chat.prompt)
@@ -50,72 +181,6 @@ struct ChatSectionView: View {
 		.padding()
 	}
 
-	private func mainContent(_ geometry: GeometryProxy) -> some View {
-		VStack(spacing: 10) {
-			if chatContainer.section.chats.isEmpty {
-				promptInputView
-					.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-			} else {
-				ScrollViewReader { scrollProxy in
-					ScrollView {
-						VStack(spacing: 10) {
-							ForEach(chatContainer.section.chats.indices, id:\.self) { index in
-								let chat = chatContainer.section.chats[index]
-								ChatCardView(card: chat,
-											 width: $chatCardViewWidth,
-											 disablePromptEntry: $disablePromptEntry,
-											 chatSection: chatContainer.section,
-											 onRemove: { removePrompt(at: index) },
-											 onBranchOut: { branchOut(from: scrollProxy, at: index) }
-								)
-								.transition(.opacity.combined(with: .move(edge: .top)))
-								.id(index)
-								.background(
-									GeometryReader { proxy in
-										Color.clear
-											.onAppear {
-												chatCardViewWidth = proxy.size.width
-											}
-											.onChange(of: proxy.size.width) { _, newValue in
-												chatCardViewWidth = newValue
-											}
-									}
-								)
-							}
-							promptInputView
-						}
-						.padding()
-						.background(
-							GeometryReader { contentGeometry in
-								Color.clear
-									.onAppear {
-										chatContainer.showSidebar = contentGeometry.size.height > geometry.size.height
-									}
-									.onChange(of: contentGeometry.size.height) { _, newHeight in
-										chatContainer.showSidebar = newHeight > geometry.size.height
-									}
-							}
-						)
-					}
-					.onChange(of: chatContainer.selectedPromptIndex) { _, newIndex in
-						if let newIndex = newIndex {
-							withAnimation {
-								scrollProxy.scrollTo(newIndex, anchor: .center)
-							}
-						}
-					}
-					.onAppear {
-						if let index = chatContainer.selectedPromptIndex {
-							withAnimation {
-								scrollProxy.scrollTo(index, anchor: .center)
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	
 	private var promptInputView: some View {
 		HStack {
 			TextField("Enter your prompt", text: $prompt)
@@ -130,7 +195,7 @@ struct ChatSectionView: View {
 			Button(action: sendPrompt) {
 				Text("Send")
 					.padding(.horizontal)
-					.padding(.vertical,8)
+					.padding(.vertical, 8)
 					.background(Color.blue)
 					.foregroundColor(.white)
 					.cornerRadius(8)
@@ -167,11 +232,5 @@ struct ChatSectionView: View {
 		if chatContainer.section.chats.isEmpty {
 			isFocused = true
 		 }
-	}
-	
-	private func branchOut(from scrollProxy: ScrollViewProxy, at index: Int) {
-		withAnimation {
-			scrollProxy.scrollTo(index, anchor: .center)
-		}
 	}
 }
