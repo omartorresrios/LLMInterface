@@ -9,23 +9,25 @@ import SwiftUI
 
 struct ScrollViewWrapper<Content: View>: NSViewRepresentable {
 	let content: Content
-	var selectedPromptIndex: Int?
+	@Binding var selectedPromptIndex: Int?
 	@Binding var height: CGFloat
 	var itemPositions: [Int: CGRect] = [:]
+	@Binding var chatsChanged: Bool
 	
 	init(@ViewBuilder content: () -> Content,
-		 selectedPromptIndex: Int? = nil,
+		 selectedPromptIndex: Binding<Int?> = .constant(nil),
 		 height: Binding<CGFloat>,
-		 itemPositions: [Int: CGRect]) {
+		 itemPositions: [Int: CGRect],
+		 chatsChanged: Binding<Bool>) {
 		self.content = content()
-		self.selectedPromptIndex = selectedPromptIndex
+		_selectedPromptIndex = selectedPromptIndex
 		_height = height
 		self.itemPositions = itemPositions
+		_chatsChanged = chatsChanged
 	}
 	
 	func makeNSView(context: Context) -> NSScrollView {
 		let scrollView = NSScrollView()
-		scrollView.borderType = .bezelBorder
 		scrollView.hasVerticalScroller = true
 		scrollView.hasHorizontalScroller = false
 		updateContent(scrollView)
@@ -33,17 +35,17 @@ struct ScrollViewWrapper<Content: View>: NSViewRepresentable {
 	}
 	
 	func updateNSView(_ nsView: NSScrollView, context: Context) {
-		updateContent(nsView)
-		// the old way
-		//		if let selectedIndex = selectedPromptIndex,
-		//		   let frame = itemFrames[selectedIndex] {
-		//			DispatchQueue.main.async {
-		//				let itemHeight = frame.height
-		//				let yOffset = frame.minY - itemHeight
-		//				let scrollPoint = NSPoint(x: 0, y: yOffset)
-		//				nsView.contentView.scroll(scrollPoint)
-		//			}
-		//		}
+		if chatsChanged {
+			let oldOffset = nsView.contentView.bounds.origin.y
+			updateContent(nsView)
+			
+			// Maintain scroll position after update
+			DispatchQueue.main.async {
+				nsView.contentView.scroll(to: NSPoint(x: 0, y: oldOffset))
+				nsView.reflectScrolledClipView(nsView.contentView)
+				self.chatsChanged = false
+			}
+		}
 		if let selectedIndex = selectedPromptIndex,
 		   let position = itemPositions[selectedIndex] {
 			DispatchQueue.main.async {
@@ -74,6 +76,7 @@ struct ScrollViewWrapper<Content: View>: NSViewRepresentable {
 				
 				nsView.contentView.scroll(to: scrollPoint)
 				nsView.reflectScrolledClipView(nsView.contentView)
+				selectedPromptIndex = nil
 			}
 		}
 	}
@@ -81,9 +84,6 @@ struct ScrollViewWrapper<Content: View>: NSViewRepresentable {
 	private func updateContent(_ scrollView: NSScrollView) {
 		let contentView = NSHostingView(rootView: content)
 		contentView.translatesAutoresizingMaskIntoConstraints = false
-		
-		// Remove old content view if it exists
-		scrollView.documentView?.removeFromSuperview()
 		
 		// Set new content view
 		scrollView.documentView = contentView
@@ -100,18 +100,19 @@ struct ChatSectionView: View {
 	@Bindable var chatContainer: ChatContainer
 	@State private var currentPromptIndex: Int = 0
 	@State private var prompt: String = ""
-	@State var chatCardViewWidth: CGFloat = 0.0
 	var addNewPrompt: (Chat) -> Void
 	@State private var disablePromptEntry = false
 	@FocusState private var isFocused: Bool
-	@State private var scrollToIndex: Int?
+	@State private var selectedPromptIndex: Int?
 	@State var scrollViewHeight: CGFloat = 0
 	@State private var itemPositions: [Int: CGRect] = [:]
+	@State private var chatsChanged: Bool = false
+	@State var showSidebar = false
 	
 	var body: some View {
 		GeometryReader { geometry in
 			HStack(alignment: .top, spacing: 0) {
-				if chatContainer.showSidebar {
+				if showSidebar {
 					sidebarContent
 						.frame(width: geometry.size.width * 0.2)
 				}
@@ -128,13 +129,14 @@ struct ChatSectionView: View {
 								.padding()
 								.background(.blue.opacity(0.3))
 							}
-							.frame(width: geometry.size.width * (chatContainer.showSidebar ? 0.8 : 1.0))
+							.frame(width: getWidth(geometryWidth: geometry.size.width))
 						},
-										  selectedPromptIndex: scrollToIndex,
-										  height: $scrollViewHeight, 
-										  itemPositions: itemPositions)
+										  selectedPromptIndex: $selectedPromptIndex,
+										  height: $scrollViewHeight,
+										  itemPositions: itemPositions,
+										  chatsChanged: $chatsChanged)
 						.onChange(of: scrollViewHeight) { _, newHeight in
-							chatContainer.showSidebar = newHeight > geometry.size.height
+							showSidebar = newHeight > geometry.size.height
 						}
 						promptInputView
 					}
@@ -143,9 +145,13 @@ struct ChatSectionView: View {
 		}
 	}
 	
+	private func getWidth(geometryWidth: CGFloat) -> CGFloat {
+		return geometryWidth * (showSidebar ? 0.8 : 1.0)
+	}
+	
 	private func chatCardView(with index: Int, geometry: GeometryProxy) -> some View {
 		ChatCardView(card: chatContainer.section.chats[index],
-					 width: geometry.size.width * (chatContainer.showSidebar ? 0.8 : 1.0),
+					 width: getWidth(geometryWidth: geometry.size.width),
 					 disablePromptEntry: $disablePromptEntry,
 					 chatSection: chatContainer.section,
 					 onRemove: {},
@@ -169,7 +175,7 @@ struct ChatSectionView: View {
 				Button(action: {
 					if let index = chatContainer.section.chats.firstIndex(where: { $0.id == chat.id }) {
 						chatContainer.selectedPromptIndex = index
-						scrollToIndex = index
+						selectedPromptIndex = index
 					}
 				}) {
 					Text(chat.prompt)
@@ -220,6 +226,7 @@ struct ChatSectionView: View {
 		withAnimation(.easeInOut(duration: 0.5)) {
 			addNewPrompt(newPrompt)
 		}
+		chatsChanged = true
 		prompt = ""
 		currentPromptIndex += 1
 		isFocused = true
@@ -229,6 +236,7 @@ struct ChatSectionView: View {
 		withAnimation(.easeInOut(duration: 0.1)) {
 			chatContainer.section.removeChat(at: index)
 		}
+		chatsChanged = true
 		if chatContainer.section.chats.isEmpty {
 			isFocused = true
 		 }

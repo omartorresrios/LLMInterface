@@ -68,8 +68,9 @@ struct SelectableTextView: NSViewRepresentable {
 					let selectedText = (textView.string as NSString).substring(with: selectedRange)
 					self.parent.selectedText = selectedText
 					self.parent.showExplainPopup = true
-				} else {
+				} else if !self.parent.selectedText.isEmpty {
 					self.parent.selectedText = ""
+					self.parent.showExplainPopup = false
 				}
 			}
 		}
