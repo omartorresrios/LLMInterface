@@ -15,6 +15,7 @@ final class ChatContainer: Identifiable {
 	var section: ChatSection
 	var searchText = ""
 	var selectedPromptIndex: Int?
+	var showSidebar = false
 	
 	init() {
 		section = ChatSection()
