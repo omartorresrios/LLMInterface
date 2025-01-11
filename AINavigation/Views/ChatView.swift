@@ -27,8 +27,8 @@ struct ChatView: View {
 						promptInputView
 							.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 					} else {
-						ScrollView {
-							ScrollViewReader { scrollProxy in
+						ScrollViewReader { scrollProxy in
+							ScrollView {
 								LazyVStack(alignment: .leading, spacing: 8) {
 									ForEach(chatViewManager.chats, id: \.self) { chat in
 										chatCardView(chat: chat, geometry: geometry)
@@ -52,7 +52,6 @@ struct ChatView: View {
 								}
 							}
 						}
-						promptInputView
 					}
 				}
 			}
