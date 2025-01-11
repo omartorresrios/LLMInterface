@@ -1,5 +1,5 @@
 //
-//  ChatSection.swift
+//  ChatViewManager.swift
 //  AINavigation
 //
 //  Created by Omar Torres on 12/15/24.
@@ -9,15 +9,27 @@ import Foundation
 import Observation
 
 @Observable
-class ChatSection: Identifiable {
+final class ChatViewManager: Identifiable {
 	let id = UUID()
+	var name = "Unnamed chat"
 	var chats: [Chat] = []
+	var searchText = ""
+	var selectedPromptIndex: Int?
+	var showSidebar = false
 	var activeAIExplainPopupViewId: Int?
 	var highlightedCardId: Int?
 	private var expandedPrompts: Set<Int> = []
 	
 	func addPrompt(chat: Chat) {
 		chats.append(chat)
+	}
+	
+	func removeChat(at index: Int) {
+		chats.remove(at: index)
+	}
+	
+	func setName(_ name: String) {
+		self.name = name
 	}
 	
 	func setHighlightedCard(_ id: Int?) {
@@ -29,10 +41,6 @@ class ChatSection: Identifiable {
 	
 	func setActiveAIExplainPopupViewId(_ id: Int?) {
 		activeAIExplainPopupViewId = id
-	}
-	
-	func removeChat(at index: Int) {
-		chats.remove(at: index)
 	}
 	
 	func clearAllSelections() {

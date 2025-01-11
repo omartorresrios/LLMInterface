@@ -1,5 +1,5 @@
 //
-//  SideBarView.swift
+//  ChatsSidebarView.swift
 //  AINavigation
 //
 //  Created by Omar Torres on 12/15/24.
@@ -7,34 +7,34 @@
 
 import SwiftUI
 
-struct SidebarView: View {
-	@Bindable var chatsManager: ChatsManager
+struct ChatsSidebarView: View {
+	@Bindable var chatContainersManager: ChatContainersManager
 	@Binding var showEditModal: ShowEditModal // remove this if EditChatName is removed
 	@State private var editingChatId: UUID?
 	@State private var temporaryName: String = ""
 	@FocusState private var isFocused: Bool
-	
+	@State private var forceRerender = false
 	var body: some View {
 		ZStack {
 			Color(hex: "F8DEC8")
-			List(chatsManager.chatContainers, id: \.id) { chatContainer in
+			List(chatContainersManager.chatViewManagers, id: \.id) { chatViewManager in
 				HStack {
-					if editingChatId == chatContainer.id {
-						TextField("Chat Name", 
+					if editingChatId == chatViewManager.id {
+						TextField("Chat Name",
 								  text: $temporaryName,
 								  onCommit: {
-							chatContainer.setName(temporaryName)
+							chatViewManager.setName(temporaryName)
 							editingChatId = nil
 						})
 						.focused($isFocused)
-						 .onAppear {
-							 temporaryName = chatContainer.name
-						 }
-						 .frame(maxWidth: .infinity, alignment: .leading)
-						 .textFieldStyle(.plain)
+						.onAppear {
+							temporaryName = chatViewManager.name
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.textFieldStyle(.plain)
 					} else {
-						Text(chatContainer.name)
-							.fontWeight(chatsManager.selectedChatContainerId == chatContainer.id ? .bold : .medium)
+						Text(chatViewManager.name)
+							.fontWeight(chatContainersManager.selectedChatContainerId == chatViewManager.id ? .bold : .medium)
 							.frame(maxWidth: .infinity, alignment: .leading)
 							.contentShape(Rectangle())
 							.simultaneousGesture(
@@ -42,25 +42,24 @@ struct SidebarView: View {
 									.onEnded {
 										DispatchQueue.main.async {
 											isFocused = true
-											editingChatId = chatContainer.id
+											editingChatId = chatViewManager.id
 										}
 									}
 							)
 							.simultaneousGesture(
 								TapGesture()
 									.onEnded {
-										chatsManager.selectedChatContainerId = chatContainer.id
+										chatContainersManager.selectedChatContainerId = chatViewManager.id
 									}
 							)
+						Button(action: {
+							//						showEditModal.setValues(true,
+							//												chatContainer.name,
+							//												chatContainer.id)
+						}) {
+							Image(systemName: "pencil")
+								.foregroundColor(.blue)
 						}
-					// button stays? if so, we should disallow double click.
-					Button(action: {
-//						showEditModal.setValues(true,
-//												chatContainer.name,
-//												chatContainer.id)
-					}) {
-						Image(systemName: "pencil")
-							.foregroundColor(.blue)
 					}
 				}
 				.contentShape(Rectangle())
@@ -70,18 +69,18 @@ struct SidebarView: View {
 			.scrollContentBackground(.hidden)
 			.toolbar {
 				Button(action: {
-					chatsManager.addChatContainer()
+					chatContainersManager.addChatContainer()
 				}) {
 					Label("Add Chat", systemImage: "plus")
 				}
-				.disabled(chatsManager.chatContainers.count > 2)
+				.disabled(chatContainersManager.chatViewManagers.count > 2)
 			}
 		}
 	}
 }
 
 #Preview {
-	SidebarView(chatsManager: ChatsManager(), 
+	ChatsSidebarView(chatContainersManager: ChatContainersManager(), 
 				showEditModal: .constant(ShowEditModal(show: false,
 													   currentChatName: "")))
 }

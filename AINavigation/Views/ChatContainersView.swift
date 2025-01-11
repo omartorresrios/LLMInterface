@@ -31,19 +31,21 @@ struct ShowEditModal {
 }
 
 struct ChatContainersView: View {
-	@State private var chatsManager = ChatsManager()
+	@State private var chatContainersManager = ChatContainersManager()
 	@State private var showEditModal = ShowEditModal()
 	
 	var body: some View {
 		GeometryReader { geometry in
 			ZStack {
 				HStack(spacing: 0) {
-					SidebarView(chatsManager: chatsManager,
+					ChatsSidebarView(chatContainersManager: chatContainersManager,
 								showEditModal: $showEditModal)
 						.frame(width: geometry.size.width * 0.2)
 					Divider()
-					if let chatContainer = chatsManager.getSelectedChat() {
-						ChatView(chatContainer: chatContainer)
+					if let chatViewManager = chatContainersManager.getSelectedChat() {
+						ChatView(chatViewManager: chatViewManager,
+								 addNewPrompt: { newChat in addNewPrompt(with: newChat, to: chatViewManager.wrappedValue) })
+						.searchable(text: chatViewManager.searchText, prompt: "Search in chat history")
 							.frame(maxWidth: .infinity)
 					}
 				}
@@ -56,14 +58,18 @@ struct ChatContainersView: View {
 									 isPresented: $showEditModal.show,
 									 chatContainerWidth: geometry.size.width)
 						.onDisappear {
-							if let index = chatsManager.chatContainers.firstIndex(where: { $0.id == showEditModal.editingChatId }) {
-								chatsManager.chatContainers[index].setName(showEditModal.currentChatName)
+							if let index = chatContainersManager.chatViewManagers.firstIndex(where: { $0.id == showEditModal.editingChatId }) {
+								chatContainersManager.chatViewManagers[index].setName(showEditModal.currentChatName)
 							}
 						}
 						.transition(.scale)
 				}
 			}
 		}
+	}
+	
+	private func addNewPrompt(with chat: Chat, to chatViewManager: ChatViewManager) {
+		chatViewManager.addPrompt(chat: chat)
 	}
 }
 

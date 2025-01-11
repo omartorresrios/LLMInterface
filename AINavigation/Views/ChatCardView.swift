@@ -100,37 +100,48 @@ struct SelectableTextView: NSViewRepresentable {
 }
 
 struct ChatCardView: View {
-	let card: Chat
-	@State var width: CGFloat
+	let chat: Chat
+	let width: CGFloat
 	@Binding var disablePromptEntry: Bool
-	@Bindable var chatSection: ChatSection
+	@State var chatCardViewManager = ChatCardViewManager()
+	@Bindable var chatViewManager: ChatViewManager
+	@SceneStorage private var storedShowThreadView: Bool
+	
 	@State private var showDeepDiveView = false
-	@State private var showThreadView = false
 	@State private var showAIExplainPopupView = false
 	@State private var highlightedText = ""
-	var onRemove: () -> Void
-	var onBranchOut: () -> Void
 	@State private var isExpanded = false
+	
+	init(chat: Chat,
+		 width: CGFloat,
+		 disablePromptEntry: Binding<Bool>,
+		 chatViewManager: ChatViewManager) {
+		self.chat = chat
+		self.width = width
+		_disablePromptEntry = disablePromptEntry
+		self.chatViewManager = chatViewManager
+		_storedShowThreadView = SceneStorage(wrappedValue: false, "showThreadView_\(chat.id)")
+		_chatCardViewManager = State(initialValue: ChatCardViewManager())
+	}
 	
 	var body: some View {
 		VStack(alignment: .leading) {
 			HStack {
-				Text(card.prompt)
+				Text(chat.prompt)
 					.font(.headline)
 				Button(action: {
 					if showAIExplainPopupView {
 						showAIExplainPopupView = false
 					}
-					onBranchOut()
-					showThreadView = true
+					chatCardViewManager.toggleThreadView()
 					highlightedText = ""
 				}) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(.red)
 				}
-				.disabled(showThreadView)
+				.disabled(chatCardViewManager.showThreadView)
 				Button {
-					onRemove()
+					chatViewManager.removeChat(at: chat.id)
 					if showDeepDiveView {
 						showDeepDiveView = false
 					}
@@ -139,10 +150,10 @@ struct ChatCardView: View {
 						.foregroundColor(.red)
 				}
 				Button {
-					chatSection.toggleExpanded(card.id)
+					chatViewManager.toggleExpanded(chat.id)
 					isExpanded.toggle()
 				} label: {
-					Text(chatSection.isExpanded(card.id) ? "Collapse" : "Show more")
+					Text(chatViewManager.isExpanded(chat.id) ? "Collapse" : "Show more")
 						.font(.footnote)
 						.foregroundColor(.blue)
 				}
@@ -150,10 +161,10 @@ struct ChatCardView: View {
 			.disabled(showDeepDiveView)
 			HStack(alignment: .top) {
 				selectableTextView
-				if showThreadView {
+				if chatCardViewManager.showThreadView {
 					VStack {
 						Button {
-							showThreadView.toggle()
+							chatCardViewManager.toggleThreadView()
 						} label: {
 							Image(systemName: "arrow.right")
 						}
@@ -166,31 +177,37 @@ struct ChatCardView: View {
 		.padding()
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
+		.onAppear {
+			chatCardViewManager = ChatCardViewManager(showThreadView: storedShowThreadView)
+		}
+		.onChange(of: chatCardViewManager.showThreadView) { _, newValue in
+				storedShowThreadView = newValue
+			}
 		.onChange(of: highlightedText) { _, newValue in
 			if !newValue.isEmpty {
-				chatSection.setHighlightedCard(card.id)
-				chatSection.setActiveAIExplainPopupViewId(card.id)
+				chatViewManager.setHighlightedCard(chat.id)
+				chatViewManager.setActiveAIExplainPopupViewId(chat.id)
 			}
 		}
-		.onChange(of: chatSection.highlightedCardId) { _, newValue in
-			if newValue != card.id {
+		.onChange(of: chatViewManager.highlightedCardId) { _, newValue in
+			if newValue != chat.id {
 				clearHighlightAndDeepDive()
 			}
 		}
 	}
 	
 	private func truncatedOutput() -> String {
-		if card.output.count > 100 {
-			return card.output.prefix(100) + "..."
+		if chat.output.count > 100 {
+			return chat.output.prefix(100) + "..."
 		}
-		return card.output
+		return chat.output
 	}
 	
 	private var selectableTextView: some View {
 		return SelectableTextView(selectedText: $highlightedText,
 						   showExplainPopup: $showAIExplainPopupView,
-						   text: card.output,
-						   onViewClick: { chatSection.clearAllSelections() })
+						   text: chat.output,
+						   onViewClick: { chatViewManager.clearAllSelections() })
 		.frame(height: selectableTextViewHeight)
 		.clipped()
 		.overlay(
@@ -208,8 +225,8 @@ struct ChatCardView: View {
 						.shadow(radius: 5)
 					}
 					.position(x: 50, y: 50)
-				} else if showDeepDiveView && 
-							chatSection.activeAIExplainPopupViewId == card.id {
+				} else if showDeepDiveView &&
+							chatViewManager.activeAIExplainPopupViewId == chat.id {
 					VStack {
 						Text("This is a random explanation from the model.")
 							.padding()
@@ -235,7 +252,7 @@ struct ChatCardView: View {
 		showAIExplainPopupView = false
 	}
 	
-	private func calculateHeight(for text: String, 
+	private func calculateHeight(for text: String,
 								 with width: CGFloat) -> CGFloat {
 		guard let customFont = NSFont(name: "Helvetica Neue", size: 16) else { return 0 }
 		let attributes: [NSAttributedString.Key: Any] = [.font: customFont]
@@ -248,15 +265,13 @@ struct ChatCardView: View {
 	}
 	
 	private var selectableTextViewHeight: CGFloat {
-		calculateHeight(for: isExpanded ? card.output : truncatedOutput(), with: width)
+		calculateHeight(for: isExpanded ? chat.output : truncatedOutput(), with: width)
 	}
 }
 
 #Preview {
-	ChatCardView(card: Chat.cards.first!,
-				 width: 0,
+	ChatCardView(chat: Chat.cards.first!, 
+				 width: 20,
 				 disablePromptEntry: .constant(false), 
-				 chatSection: ChatSection(),
-				 onRemove: { },
-				 onBranchOut: { })
+				 chatViewManager: ChatViewManager())
 }
