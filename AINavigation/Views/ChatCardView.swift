@@ -105,8 +105,6 @@ struct ChatCardView: View {
 	@Binding var disablePromptEntry: Bool
 	@State var chatCardViewManager = ChatCardViewManager()
 	@Bindable var chatViewManager: ChatViewManager
-	@SceneStorage private var storedShowThreadView: Bool
-	
 	@State private var showDeepDiveView = false
 	@State private var showAIExplainPopupView = false
 	@State private var highlightedText = ""
@@ -120,8 +118,6 @@ struct ChatCardView: View {
 		self.width = width
 		_disablePromptEntry = disablePromptEntry
 		self.chatViewManager = chatViewManager
-		_storedShowThreadView = SceneStorage(wrappedValue: false, "showThreadView_\(chat.id)")
-		_chatCardViewManager = State(initialValue: ChatCardViewManager())
 	}
 	
 	var body: some View {
@@ -177,12 +173,6 @@ struct ChatCardView: View {
 		.padding()
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
-		.onAppear {
-			chatCardViewManager = ChatCardViewManager(showThreadView: storedShowThreadView)
-		}
-		.onChange(of: chatCardViewManager.showThreadView) { _, newValue in
-				storedShowThreadView = newValue
-			}
 		.onChange(of: highlightedText) { _, newValue in
 			if !newValue.isEmpty {
 				chatViewManager.setHighlightedCard(chat.id)
