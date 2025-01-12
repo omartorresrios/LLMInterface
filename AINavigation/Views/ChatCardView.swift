@@ -142,27 +142,32 @@ struct ChatCardView: View {
 						.foregroundColor(.red)
 				}
 				Button {
-					chatViewManager.toggleExpanded(chat.id)
 					chatCardViewManager.toggleIsExpanded()
 				} label: {
-					Text(chatViewManager.isExpanded(chat.id) ? "Collapse" : "Show more")
+					Text(chatCardViewManager.isExpanded ? "Collapse" : "Show more")
 						.font(.footnote)
 						.foregroundColor(.blue)
 				}
 			}
 			.disabled(chatCardViewManager.showDeepDiveView)
-			HStack(alignment: .top) {
-				selectableTextView
-				if chatCardViewManager.showThreadView {
-					VStack {
-						Button {
-							chatCardViewManager.toggleThreadView()
-						} label: {
-							Image(systemName: "arrow.right")
+			
+			if chat.status == .completed {
+				HStack(alignment: .top) {
+					selectableTextView
+					if chatCardViewManager.showThreadView {
+						VStack {
+							Button {
+								chatCardViewManager.toggleThreadView()
+							} label: {
+								Image(systemName: "arrow.right")
+							}
+							Text("This is just a test of the pop up view.")
 						}
-						Text("This is just a test of the pop up view.")
 					}
 				}
+			} else {
+				ProgressView()
+					.padding(.top, 8)
 			}
 		}
 		.frame(maxWidth: .infinity, alignment: .leading)
