@@ -42,6 +42,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		24272B622D33EB4B00F0EEFF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		24538B242D0F1E7A0099DB0E /* ChatContainersManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatContainersManager.swift; sourceTree = "<group>"; };
 		24538B272D0F20260099DB0E /* ChatViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewManager.swift; sourceTree = "<group>"; };
 		24538B292D0F205B0099DB0E /* ChatsSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsSidebarView.swift; sourceTree = "<group>"; };
@@ -141,6 +142,7 @@
 		249116C72CEA4C21008E6FC6 /* AINavigation */ = {
 			isa = PBXGroup;
 			children = (
+				24272B622D33EB4B00F0EEFF /* Info.plist */,
 				249116C82CEA4C21008E6FC6 /* AINavigationApp.swift */,
 				24538B2B2D0F207C0099DB0E /* Views */,
 				24538B262D0F20060099DB0E /* Observables */,
@@ -485,6 +487,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AINavigation/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -512,6 +515,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AINavigation/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ChatView: View {
 	@Binding var chatViewManager: ChatViewManager
-	@State private var prompt: String = ""
 	var addNewPrompt: (Chat) -> Void
 	@State private var disablePromptEntry = false
 	@FocusState private var isFocused: Bool
@@ -30,7 +29,7 @@ struct ChatView: View {
 						ScrollViewReader { scrollProxy in
 							ScrollView {
 								LazyVStack(alignment: .leading, spacing: 8) {
-									ForEach(chatViewManager.chats, id: \.self) { chat in
+									ForEach(chatViewManager.chats, id: \.id) { chat in
 										chatCardView(chat: chat, geometry: geometry)
 											.id(chat.id)
 									}
@@ -51,6 +50,7 @@ struct ChatView: View {
 									scrollToBottom(proxy: scrollProxy)
 								}
 							}
+							promptInputView
 						}
 					}
 				}
@@ -106,10 +106,10 @@ struct ChatView: View {
 
 	private var promptInputView: some View {
 		HStack {
-			TextField("Enter your prompt", text: $prompt)
+			TextField("Enter your prompt", text: $chatViewManager.prompt)
 				.textFieldStyle(RoundedBorderTextFieldStyle())
 				.onSubmit {
-					if !prompt.isEmpty {
+					if !chatViewManager.prompt.isEmpty {
 						sendPrompt()
 					}
 				}
@@ -124,7 +124,7 @@ struct ChatView: View {
 					.cornerRadius(8)
 			}
 			.buttonStyle(.plain)
-			.disabled(prompt.isEmpty)
+			.disabled(chatViewManager.prompt.isEmpty)
 		}
 		.disabled(disablePromptEntry)
 		.padding(.horizontal, chatViewManager.chats.count > 0 ? 0 : 16)
@@ -136,14 +136,14 @@ struct ChatView: View {
 	}
 	
 	private func sendPrompt() {
-		guard chatViewManager.chats.count < Chat.cards.count else { return }
-		var newPrompt = Chat.cards[chatViewManager.chats.count]
-		newPrompt.setPrompt(prompt)
-		
-		withAnimation(.easeInOut(duration: 0.5)) {
-			addNewPrompt(newPrompt)
-		}
-		prompt = ""
+//		guard chatViewManager.chats.count < Chat.cards.count else { return }
+//		var newPrompt = Chat.cards[chatViewManager.chats.count]
+//		newPrompt.setPrompt(prompt)
+//		
+//		withAnimation(.easeInOut(duration: 0.5)) {
+//			addNewPrompt(newPrompt)
+//		}
+		chatViewManager.sendPrompt()
 		isFocused = true
 	}
 	

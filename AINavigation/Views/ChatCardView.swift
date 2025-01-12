@@ -137,7 +137,7 @@ struct ChatCardView: View {
 				}
 				.disabled(chatCardViewManager.showThreadView)
 				Button {
-					chatViewManager.removeChat(at: chat.id)
+					chatViewManager.removeChat(at: Int(chat.id) ?? 0)
 					if showDeepDiveView {
 						showDeepDiveView = false
 					}
@@ -175,12 +175,12 @@ struct ChatCardView: View {
 		.cornerRadius(8)
 		.onChange(of: highlightedText) { _, newValue in
 			if !newValue.isEmpty {
-				chatViewManager.setHighlightedCard(chat.id)
-				chatViewManager.setActiveAIExplainPopupViewId(chat.id)
+				chatViewManager.setHighlightedCard(Int(chat.id) ?? 0)
+				chatViewManager.setActiveAIExplainPopupViewId(Int(chat.id) ?? 0)
 			}
 		}
 		.onChange(of: chatViewManager.highlightedCardId) { _, newValue in
-			if newValue != chat.id {
+			if newValue != Int(chat.id) ?? 0 {
 				clearHighlightAndDeepDive()
 			}
 		}
@@ -216,7 +216,7 @@ struct ChatCardView: View {
 					}
 					.position(x: 50, y: 50)
 				} else if showDeepDiveView &&
-							chatViewManager.activeAIExplainPopupViewId == chat.id {
+							chatViewManager.activeAIExplainPopupViewId == Int(chat.id) ?? 0 {
 					VStack {
 						Text("This is a random explanation from the model.")
 							.padding()
