@@ -17,8 +17,8 @@ final class ChatViewManager: Identifiable {
 	var searchText = ""
 	var selectedPromptIndex: Int?
 	var showSidebar = false
-	var activeAIExplainPopupViewId: Int?
-	var highlightedCardId: Int?
+	var activeAIExplainPopupViewId: String?
+	var highlightedCardId: String?
 	private var expandedPrompts: Set<Int> = []
 	
 	func sendPrompt() {
@@ -90,14 +90,14 @@ final class ChatViewManager: Identifiable {
 		self.name = name
 	}
 	
-	func setHighlightedCard(_ id: Int?) {
+	func setHighlightedCard(_ id: String) {
 		highlightedCardId = id
 		if id != activeAIExplainPopupViewId {
 			activeAIExplainPopupViewId = nil
 		}
 	}
 	
-	func setActiveAIExplainPopupViewId(_ id: Int?) {
+	func setActiveAIExplainPopupViewId(_ id: String?) {
 		activeAIExplainPopupViewId = id
 	}
 	

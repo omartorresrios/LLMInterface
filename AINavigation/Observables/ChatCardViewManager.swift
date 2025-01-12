@@ -10,13 +10,25 @@ import Observation
 
 @Observable
 final class ChatCardViewManager {
-	var showThreadView: Bool
-	
-	init(showThreadView: Bool = false) {
-		self.showThreadView = showThreadView
-	}
+	var showThreadView = false
+	var isExpanded = true
+	var showDeepDiveView = false
+	var showAIExplainPopupView = false
+	var highlightedText = ""
 	
 	func toggleThreadView() {
 		showThreadView.toggle()
+	}
+	
+	func toggleIsExpanded() {
+		isExpanded.toggle()
+	}
+	
+	func setAIExplainPopup(_ newState: Bool) {
+		showAIExplainPopupView = newState
+	}
+	
+	func setDeepDiveView(_ newState: Bool) {
+		showDeepDiveView = newState
 	}
 }

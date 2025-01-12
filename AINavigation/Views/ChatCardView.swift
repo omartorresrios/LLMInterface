@@ -105,10 +105,6 @@ struct ChatCardView: View {
 	@Binding var disablePromptEntry: Bool
 	@State var chatCardViewManager = ChatCardViewManager()
 	@Bindable var chatViewManager: ChatViewManager
-	@State private var showDeepDiveView = false
-	@State private var showAIExplainPopupView = false
-	@State private var highlightedText = ""
-	@State private var isExpanded = false
 	
 	init(chat: Chat,
 		 width: CGFloat,
@@ -126,11 +122,11 @@ struct ChatCardView: View {
 				Text(chat.prompt)
 					.font(.headline)
 				Button(action: {
-					if showAIExplainPopupView {
-						showAIExplainPopupView = false
+					if chatCardViewManager.showAIExplainPopupView {
+						chatCardViewManager.setAIExplainPopup(false)
 					}
 					chatCardViewManager.toggleThreadView()
-					highlightedText = ""
+					chatCardViewManager.highlightedText = ""
 				}) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(.red)
@@ -138,8 +134,8 @@ struct ChatCardView: View {
 				.disabled(chatCardViewManager.showThreadView)
 				Button {
 					chatViewManager.removeChat(at: Int(chat.id) ?? 0)
-					if showDeepDiveView {
-						showDeepDiveView = false
+					if chatCardViewManager.showDeepDiveView {
+						chatCardViewManager.setDeepDiveView(false)
 					}
 				} label: {
 					Image(systemName: "trash")
@@ -147,14 +143,14 @@ struct ChatCardView: View {
 				}
 				Button {
 					chatViewManager.toggleExpanded(chat.id)
-					isExpanded.toggle()
+					chatCardViewManager.toggleIsExpanded()
 				} label: {
 					Text(chatViewManager.isExpanded(chat.id) ? "Collapse" : "Show more")
 						.font(.footnote)
 						.foregroundColor(.blue)
 				}
 			}
-			.disabled(showDeepDiveView)
+			.disabled(chatCardViewManager.showDeepDiveView)
 			HStack(alignment: .top) {
 				selectableTextView
 				if chatCardViewManager.showThreadView {
@@ -173,14 +169,14 @@ struct ChatCardView: View {
 		.padding()
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
-		.onChange(of: highlightedText) { _, newValue in
+		.onChange(of: chatCardViewManager.highlightedText) { _, newValue in
 			if !newValue.isEmpty {
-				chatViewManager.setHighlightedCard(Int(chat.id) ?? 0)
-				chatViewManager.setActiveAIExplainPopupViewId(Int(chat.id) ?? 0)
+				chatViewManager.setHighlightedCard(chat.id)
+				chatViewManager.setActiveAIExplainPopupViewId(chat.id)
 			}
 		}
 		.onChange(of: chatViewManager.highlightedCardId) { _, newValue in
-			if newValue != Int(chat.id) ?? 0 {
+			if newValue != chat.id {
 				clearHighlightAndDeepDive()
 			}
 		}
@@ -194,19 +190,19 @@ struct ChatCardView: View {
 	}
 	
 	private var selectableTextView: some View {
-		return SelectableTextView(selectedText: $highlightedText,
-						   showExplainPopup: $showAIExplainPopupView,
+		return SelectableTextView(selectedText: $chatCardViewManager.highlightedText,
+								  showExplainPopup: $chatCardViewManager.showAIExplainPopupView,
 						   text: chat.output,
 						   onViewClick: { chatViewManager.clearAllSelections() })
 		.frame(height: selectableTextViewHeight)
 		.clipped()
 		.overlay(
 			Group {
-				if showAIExplainPopupView && !highlightedText.isEmpty {
+				if chatCardViewManager.showAIExplainPopupView && !chatCardViewManager.highlightedText.isEmpty {
 					VStack {
 						Button("Explain") {
-							showAIExplainPopupView = false
-							showDeepDiveView = true
+							chatCardViewManager.setAIExplainPopup(false)
+							chatCardViewManager.setDeepDiveView(true)
 							disablePromptEntry = true
 						}
 						.padding()
@@ -215,14 +211,14 @@ struct ChatCardView: View {
 						.shadow(radius: 5)
 					}
 					.position(x: 50, y: 50)
-				} else if showDeepDiveView &&
-							chatViewManager.activeAIExplainPopupViewId == Int(chat.id) ?? 0 {
+				} else if chatCardViewManager.showDeepDiveView &&
+							chatViewManager.activeAIExplainPopupViewId == chat.id {
 					VStack {
 						Text("This is a random explanation from the model.")
 							.padding()
 						Button("Close") {
-							showDeepDiveView = false
-							highlightedText = ""
+							chatCardViewManager.setDeepDiveView(false)
+							chatCardViewManager.highlightedText = ""
 							disablePromptEntry = false
 						}
 						.buttonStyle(.bordered)
@@ -238,8 +234,8 @@ struct ChatCardView: View {
 	}
 	
 	private func clearHighlightAndDeepDive() {
-		highlightedText = ""
-		showAIExplainPopupView = false
+		chatCardViewManager.highlightedText = ""
+		chatCardViewManager.setAIExplainPopup(false)
 	}
 	
 	private func calculateHeight(for text: String,
@@ -255,7 +251,7 @@ struct ChatCardView: View {
 	}
 	
 	private var selectableTextViewHeight: CGFloat {
-		calculateHeight(for: isExpanded ? chat.output : truncatedOutput(), with: width)
+		calculateHeight(for: chatCardViewManager.isExpanded ? chat.output : truncatedOutput(), with: width)
 	}
 }
 
