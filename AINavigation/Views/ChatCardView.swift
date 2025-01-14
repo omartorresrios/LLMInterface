@@ -7,104 +7,13 @@
 
 import SwiftUI
 
-struct SelectableTextView: NSViewRepresentable {
-	@Binding var selectedText: String
-	@Binding var showExplainPopup: Bool
-	let text: String
-	var onViewClick: () -> Void
-
-	func makeNSView(context: Context) -> ClickableTextView {
-		let customFont = NSFont(name: "Helvetica Neue", size: 16)
-		let textView = ClickableTextView()
-		textView.string = text
-		textView.font = customFont
-		textView.isEditable = false
-		textView.isSelectable = true
-		textView.delegate = context.coordinator
-		
-		textView.backgroundColor = NSColor.clear
-		textView.textColor = NSColor.textColor
-		textView.insertionPointColor = .green
-		textView.selectedTextAttributes = [
-			.backgroundColor: NSColor.green.withAlphaComponent(0.3),
-			.foregroundColor: NSColor.textColor
-		]
-		
-		textView.setupClickGesture()
-		textView.onViewClick = onViewClick
-		return textView
-	}
-
-	func updateNSView(_ nsView: ClickableTextView, context: Context) {
-		nsView.onViewClick = onViewClick
-		nsView.textColor = NSColor.textColor
-		nsView.selectedTextAttributes = [
-			.backgroundColor: NSColor.green.withAlphaComponent(0.3),
-			.foregroundColor: NSColor.textColor
-		]
-		if selectedText.isEmpty {
-			nsView.setSelectedRange(NSRange(location: 0, length: 0))
-		}
-	}
-
-	func makeCoordinator() -> Coordinator {
-		Coordinator(self)
-	}
-
-	class Coordinator: NSObject, NSTextViewDelegate {
-		var parent: SelectableTextView
-
-		init(_ parent: SelectableTextView) {
-			self.parent = parent
-		}
-
-		func textViewDidChangeSelection(_ notification: Notification) {
-			guard let textView = notification.object as? NSTextView else { return }
-			let selectedRange = textView.selectedRange()
-
-			DispatchQueue.main.async { [weak self] in
-				guard let self = self else { return }
-				if selectedRange.length > 0 {
-					let selectedText = (textView.string as NSString).substring(with: selectedRange)
-					self.parent.selectedText = selectedText
-					self.parent.showExplainPopup = true
-				} else if !self.parent.selectedText.isEmpty {
-					self.parent.selectedText = ""
-					self.parent.showExplainPopup = false
-				}
-			}
-		}
-	}
-	
-	final class ClickableTextView: NSTextView {
-		var onViewClick: (() -> Void)?
-		private var clickGestureRecognizer: NSClickGestureRecognizer?
-
-		func setupClickGesture() {
-			if clickGestureRecognizer == nil {
-				clickGestureRecognizer = NSClickGestureRecognizer(target: self,
-																  action: #selector(handleClick(_:)))
-				clickGestureRecognizer?.numberOfClicksRequired = 1
-				if let recognizer = clickGestureRecognizer {
-					addGestureRecognizer(recognizer)
-				}
-			}
-		}
-
-		@objc private func handleClick(_ gestureRecognizer: NSClickGestureRecognizer) {
-			if gestureRecognizer.state == .ended {
-				onViewClick?()
-			}
-		}
-	}
-}
-
 struct ChatCardView: View {
 	let chat: Chat
 	let width: CGFloat
 	@Binding var disablePromptEntry: Bool
 	@State var chatCardViewManager = ChatCardViewManager()
 	@Bindable var chatViewManager: ChatViewManager
+	@State private var hasMoreThanTwoLines = false
 	
 	init(chat: Chat,
 		 width: CGFloat,
@@ -118,6 +27,7 @@ struct ChatCardView: View {
 	
 	var body: some View {
 		VStack(alignment: .leading) {
+			Text("Selected text: \(chatCardViewManager.highlightedText)")
 			HStack {
 				Text(chat.prompt)
 					.font(.headline)
@@ -141,19 +51,40 @@ struct ChatCardView: View {
 					Image(systemName: "trash")
 						.foregroundColor(.red)
 				}
-				Button {
-					chatCardViewManager.toggleIsExpanded()
-				} label: {
-					Text(chatCardViewManager.isExpanded ? "Collapse" : "Show more")
-						.font(.footnote)
-						.foregroundColor(.blue)
+				if hasMoreThanTwoLines {
+					Button {
+						chatCardViewManager.toggleIsExpanded()
+					} label: {
+						Text(chatCardViewManager.isExpanded ? "Collapse" : "Show more")
+							.font(.footnote)
+							.foregroundColor(.blue)
+					}
 				}
 			}
-			.disabled(chatCardViewManager.showDeepDiveView)
+			.disabled(chatCardViewManager.showDeepDiveView || chat.status == .pending)
 			
 			if chat.status == .completed {
 				HStack(alignment: .top) {
-					selectableTextView
+					if hasMoreThanTwoLines && chatCardViewManager.isExpanded {
+						TextEditor(text: .constant(chat.output))
+							.padding(.top, -3)
+							.padding(.leading, -5)
+							.font(.custom("Helvetica Neue", size: 16))
+							.scrollIndicators(.hidden)
+							.scrollContentBackground(.hidden)
+							.background(.clear)
+							.onReceive(NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification)) { notification in
+								clearTextSelection(notification: notification)
+							}
+							.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
+								updateHighlightedText(notification: notification)
+							}
+					} else {
+						let cleanedText = chat.output.replacingOccurrences(of: "[:;.]", with: "", options: .regularExpression)
+						Text(cleanedText + (hasMoreThanTwoLines ? "\n" : ""))
+							.font(.custom("Helvetica Neue", size: 16))
+							.lineLimit(hasMoreThanTwoLines ? 2 : nil)
+					}
 					if chatCardViewManager.showThreadView {
 						VStack {
 							Button {
@@ -174,6 +105,9 @@ struct ChatCardView: View {
 		.padding()
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
+		.onChange(of: chat.output, { oldValue, newValue in
+			hasMoreThanTwoLines = countLines(in: newValue) > 2
+		})
 		.onChange(of: chatCardViewManager.highlightedText) { _, newValue in
 			if !newValue.isEmpty {
 				chatViewManager.setHighlightedCard(chat.id)
@@ -187,76 +121,44 @@ struct ChatCardView: View {
 		}
 	}
 	
-	private func truncatedOutput() -> String {
-		if chat.output.count > 100 {
-			return chat.output.prefix(100) + "..."
+	private func countLines(in string: String) -> Int {
+			let lines = string.components(separatedBy: .newlines)
+			return lines.reduce(0) { count, line in
+				let words = line.split(separator: " ")
+				let lineCount = words.count / 10 + (words.count % 10 > 0 ? 1 : 0)
+				return count + max(1, lineCount)
+			}
 		}
-		return chat.output
-	}
 	
-	private var selectableTextView: some View {
-		return SelectableTextView(selectedText: $chatCardViewManager.highlightedText,
-								  showExplainPopup: $chatCardViewManager.showAIExplainPopupView,
-						   text: chat.output,
-						   onViewClick: { chatViewManager.clearAllSelections() })
-		.frame(height: selectableTextViewHeight)
-		.clipped()
-		.overlay(
-			Group {
-				if chatCardViewManager.showAIExplainPopupView && !chatCardViewManager.highlightedText.isEmpty {
-					VStack {
-						Button("Explain") {
-							chatCardViewManager.setAIExplainPopup(false)
-							chatCardViewManager.setDeepDiveView(true)
-							disablePromptEntry = true
-						}
-						.padding()
-						.background(.red)
-						.cornerRadius(8)
-						.shadow(radius: 5)
-					}
-					.position(x: 50, y: 50)
-				} else if chatCardViewManager.showDeepDiveView &&
-							chatViewManager.activeAIExplainPopupViewId == chat.id {
-					VStack {
-						Text("This is a random explanation from the model.")
-							.padding()
-						Button("Close") {
-							chatCardViewManager.setDeepDiveView(false)
-							chatCardViewManager.highlightedText = ""
-							disablePromptEntry = false
-						}
-						.buttonStyle(.bordered)
-					}
-					.padding()
-					.background(Color(NSColor.windowBackgroundColor))
-					.foregroundColor(Color(NSColor.labelColor))
-					.cornerRadius(8)
-					.shadow(radius: 5)
+	private func clearTextSelection(notification: Notification) {
+		guard let textView = notification.object as? NSTextView else { return }
+		textView.insertionPointColor = .clear
+		textView.selectedRange = NSRange(location: 0, length: 0)
+	}
+
+	private func updateHighlightedText(notification: Notification) {
+		guard let textView = notification.object as? NSTextView else { return }
+		textView.insertionPointColor = .clear
+
+		let selectionRange = textView.selectedRange()
+
+		DispatchQueue.main.async {
+			if selectionRange.length > 0 {
+				let startIndex = String.Index(utf16Offset: selectionRange.lowerBound, in: chat.output)
+				let endIndex = String.Index(utf16Offset: selectionRange.upperBound, in: chat.output)
+				let substringRange = startIndex..<endIndex
+				chatCardViewManager.highlightedText = String(chat.output[substringRange])
+			} else {
+				if !chatCardViewManager.highlightedText.isEmpty {
+					chatCardViewManager.highlightedText = ""
 				}
 			}
-		)
+		}
 	}
 	
 	private func clearHighlightAndDeepDive() {
 		chatCardViewManager.highlightedText = ""
 		chatCardViewManager.setAIExplainPopup(false)
-	}
-	
-	private func calculateHeight(for text: String,
-								 with width: CGFloat) -> CGFloat {
-		guard let customFont = NSFont(name: "Helvetica Neue", size: 16) else { return 0 }
-		let attributes: [NSAttributedString.Key: Any] = [.font: customFont]
-		let size = CGSize(width: width - 40, height: .greatestFiniteMagnitude) // Adjust for padding
-		let boundingRect = (text as NSString).boundingRect(with: size,
-														   options: [.usesLineFragmentOrigin, .usesFontLeading],
-														   attributes: attributes,
-														   context: nil)
-		return ceil(boundingRect.height)
-	}
-	
-	private var selectableTextViewHeight: CGFloat {
-		calculateHeight(for: chatCardViewManager.isExpanded ? chat.output : truncatedOutput(), with: width)
 	}
 }
 

@@ -35,7 +35,7 @@ final class ChatViewManager: Identifiable {
 			"messages": [
 				[
 					"role": "user",
-					"content": prompt
+					"content": newChat.prompt
 				]
 			],
 			"stream": false
