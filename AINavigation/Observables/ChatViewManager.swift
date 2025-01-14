@@ -86,8 +86,10 @@ final class ChatViewManager: Identifiable {
 		chats.append(chat)
 	}
 	
-	func removeChat(at index: Int) {
-		chats.remove(at: index)
+	func removeChat(_ chatId: String) {
+		if let index = chats.firstIndex(where: { $0.id == chatId }) {
+			chats.remove(at: index)
+		}
 	}
 	
 	func setName(_ name: String) {

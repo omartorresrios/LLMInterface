@@ -14,15 +14,18 @@ struct ChatCardView: View {
 	@State var chatCardViewManager = ChatCardViewManager()
 	@Bindable var chatViewManager: ChatViewManager
 	@State private var hasMoreThanTwoLines = false
+	var removePrompt: (String) -> Void
 	
 	init(chat: Chat,
 		 width: CGFloat,
 		 disablePromptEntry: Binding<Bool>,
-		 chatViewManager: ChatViewManager) {
+		 chatViewManager: ChatViewManager,
+		 removePrompt: @escaping (String) -> Void) {
 		self.chat = chat
 		self.width = width
 		_disablePromptEntry = disablePromptEntry
 		self.chatViewManager = chatViewManager
+		self.removePrompt = removePrompt
 	}
 	
 	var body: some View {
@@ -43,7 +46,7 @@ struct ChatCardView: View {
 				}
 				.disabled(chatCardViewManager.showThreadView)
 				Button {
-					chatViewManager.removeChat(at: Int(chat.id) ?? 0)
+					removePrompt(chat.id)
 					if chatCardViewManager.showDeepDiveView {
 						chatCardViewManager.setDeepDiveView(false)
 					}
@@ -71,6 +74,7 @@ struct ChatCardView: View {
 							.padding(.leading, -5)
 							.font(.custom("Helvetica Neue", size: 16))
 							.scrollIndicators(.hidden)
+							.scrollDisabled(true)
 							.scrollContentBackground(.hidden)
 							.background(.clear)
 							.onReceive(NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification)) { notification in
@@ -166,5 +170,6 @@ struct ChatCardView: View {
 	ChatCardView(chat: Chat.cards.first!, 
 				 width: 20,
 				 disablePromptEntry: .constant(false), 
-				 chatViewManager: ChatViewManager())
+				 chatViewManager: ChatViewManager(), 
+				 removePrompt: { _ in })
 }

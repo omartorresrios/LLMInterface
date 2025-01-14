@@ -80,7 +80,8 @@ struct ChatView: View {
 		ChatCardView(chat: chat,
 					 width: getWidth(geometryWidth: geometry.size.width),
 					 disablePromptEntry: $disablePromptEntry,
-					 chatViewManager: chatViewManager)
+					 chatViewManager: chatViewManager,
+					 removePrompt: removePrompt)
 	}
 	
 	private var promptsSidebarView: some View {
@@ -147,9 +148,9 @@ struct ChatView: View {
 		isFocused = true
 	}
 	
-	private func removePrompt(at index: Int) {
+	private func removePrompt(_ chatId: String) {
 		withAnimation(.easeInOut(duration: 0.1)) {
-			chatViewManager.removeChat(at: index)
+			chatViewManager.removeChat(chatId)
 		}
 		if chatViewManager.chats.isEmpty {
 			isFocused = true
