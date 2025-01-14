@@ -30,7 +30,6 @@ struct ChatCardView: View {
 	
 	var body: some View {
 		VStack(alignment: .leading) {
-			Text("Selected text: \(chatCardViewManager.highlightedText)")
 			HStack {
 				Text(chat.prompt)
 					.font(.headline)
@@ -148,10 +147,9 @@ struct ChatCardView: View {
 
 		DispatchQueue.main.async {
 			if selectionRange.length > 0 {
-				let startIndex = String.Index(utf16Offset: selectionRange.lowerBound, in: chat.output)
-				let endIndex = String.Index(utf16Offset: selectionRange.upperBound, in: chat.output)
-				let substringRange = startIndex..<endIndex
-				chatCardViewManager.highlightedText = String(chat.output[substringRange])
+				if let substringRange = Range(selectionRange, in: chat.output) {
+					chatCardViewManager.highlightedText = String(chat.output[substringRange])
+				}
 			} else {
 				if !chatCardViewManager.highlightedText.isEmpty {
 					chatCardViewManager.highlightedText = ""

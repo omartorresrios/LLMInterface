@@ -12,7 +12,6 @@ struct ChatView: View {
 	var addNewPrompt: (Chat) -> Void
 	@State private var disablePromptEntry = false
 	@FocusState private var isFocused: Bool
-	@State private var contentHeight: CGFloat = 0
 	
 	var body: some View {
 		GeometryReader { geometry in
@@ -42,8 +41,7 @@ struct ChatView: View {
 									}
 								)
 								.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-									contentHeight = height
-									updateSidebarVisibility(screenHeight: geometry.size.height)
+									chatViewManager.showSidebar = height > geometry.size.height
 								}
 								.frame(width: getWidth(geometryWidth: geometry.size.width))
 								.onChange(of: chatViewManager.chats.count) { _, newValue in
@@ -56,10 +54,6 @@ struct ChatView: View {
 				}
 			}
 		}
-	}
-	
-	private func updateSidebarVisibility(screenHeight: CGFloat) {
-		chatViewManager.showSidebar = contentHeight > screenHeight
 	}
 	
 	private func scrollToBottom(proxy: ScrollViewProxy) {
