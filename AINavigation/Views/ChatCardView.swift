@@ -67,10 +67,9 @@ struct ChatCardView: View {
 			
 			if chat.status == .completed {
 				HStack(alignment: .top) {
-					if hasMoreThanTwoLines && chatCardViewManager.isExpanded {
+					ZStack(alignment: .bottom) {
 						TextEditor(text: .constant(chat.output))
-							.padding(.top, -3)
-							.padding(.leading, -5)
+							.frame(height: chatCardViewManager.isExpanded ? nil : 100)
 							.font(.custom("Helvetica Neue", size: 16))
 							.scrollIndicators(.hidden)
 							.scrollDisabled(true)
@@ -82,11 +81,17 @@ struct ChatCardView: View {
 							.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
 								updateHighlightedText(notification: notification)
 							}
-					} else {
-						let cleanedText = chat.output.replacingOccurrences(of: "[:;.]", with: "", options: .regularExpression)
-						Text(cleanedText + (hasMoreThanTwoLines ? "\n" : ""))
-							.font(.custom("Helvetica Neue", size: 16))
-							.lineLimit(hasMoreThanTwoLines ? 2 : nil)
+						if !chatCardViewManager.isExpanded {
+							LinearGradient(
+								gradient: Gradient(colors: [
+									Color.gray.opacity(0),
+									Color.gray.opacity(0.2)
+								]),
+								startPoint: .top,
+								endPoint: .bottom
+							)
+							.frame(height: 50) // Height of blur effect
+						}
 					}
 					if chatCardViewManager.showThreadView {
 						VStack {
@@ -122,6 +127,41 @@ struct ChatCardView: View {
 				clearHighlightAndDeepDive()
 			}
 		}
+		.overlay(
+			Group {
+				if chatCardViewManager.showAIExplainPopupView && !chatCardViewManager.highlightedText.isEmpty {
+					VStack {
+						Button("Explain") {
+							chatCardViewManager.setAIExplainPopup(false)
+							chatCardViewManager.setDeepDiveView(true)
+							disablePromptEntry = true
+						}
+						.padding()
+						.background(.red)
+						.cornerRadius(8)
+						.shadow(radius: 5)
+					}
+					.position(x: 50, y: 50)
+				} else if chatCardViewManager.showDeepDiveView &&
+							chatViewManager.activeAIExplainPopupViewId == chat.id {
+					VStack {
+						Text("This is a random explanation from the model.")
+							.padding()
+						Button("Close") {
+							chatCardViewManager.setDeepDiveView(false)
+							chatCardViewManager.highlightedText = ""
+							disablePromptEntry = false
+						}
+						.buttonStyle(.bordered)
+					}
+					.padding()
+					.background(Color(NSColor.windowBackgroundColor))
+					.foregroundColor(Color(NSColor.labelColor))
+					.cornerRadius(8)
+					.shadow(radius: 5)
+				}
+			}
+		)
 	}
 	
 	private func countLines(in string: String) -> Int {
@@ -149,10 +189,12 @@ struct ChatCardView: View {
 			if selectionRange.length > 0 {
 				if let substringRange = Range(selectionRange, in: chat.output) {
 					chatCardViewManager.highlightedText = String(chat.output[substringRange])
+					chatCardViewManager.setAIExplainPopup(true)
 				}
 			} else {
 				if !chatCardViewManager.highlightedText.isEmpty {
 					chatCardViewManager.highlightedText = ""
+					chatCardViewManager.setAIExplainPopup(false)
 				}
 			}
 		}
