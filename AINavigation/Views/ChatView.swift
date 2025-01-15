@@ -10,8 +10,8 @@ import SwiftUI
 struct ChatView: View {
 	@Binding var chatViewManager: ChatViewManager
 	@State private var disablePromptEntry = false
-	@FocusState private var isFocused: Bool
 	@State private var scrollViewProxy: ScrollViewProxy?
+	@FocusState private var isFocused: Bool
 	var addNewPrompt: (Chat) -> Void
 	
 	var body: some View {

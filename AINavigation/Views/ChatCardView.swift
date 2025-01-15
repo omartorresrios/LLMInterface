@@ -15,6 +15,12 @@ struct ChatCardView: View {
 	@Bindable var chatViewManager: ChatViewManager
 	@State private var hasMoreThanTwoLines = false
 	var removePrompt: (String) -> Void
+	@State private var displayedText = ""
+	@State private var isAnimating = false
+	@State private var currentIndex = 0
+	@State private var timer: Timer?
+	@State private var previousSelection: NSRange = NSRange(location: 0, length: 0)
+	@State private var isInitialAppearance: Bool = true
 	
 	init(chat: Chat,
 		 width: CGFloat,
@@ -53,7 +59,7 @@ struct ChatCardView: View {
 					Image(systemName: "trash")
 						.foregroundColor(.red)
 				}
-				if hasMoreThanTwoLines {
+				if hasMoreThanTwoLines && !isAnimating {
 					Button {
 						chatCardViewManager.toggleIsExpanded()
 					} label: {
@@ -68,7 +74,7 @@ struct ChatCardView: View {
 			if chat.status == .completed {
 				HStack(alignment: .top) {
 					ZStack(alignment: .bottom) {
-						TextEditor(text: .constant(chat.output))
+						TextEditor(text: .constant(displayedText))
 							.frame(height: chatCardViewManager.isExpanded ? nil : 100)
 							.font(.custom("Helvetica Neue", size: 16))
 							.scrollIndicators(.hidden)
@@ -113,13 +119,18 @@ struct ChatCardView: View {
 		.padding()
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
-		.onChange(of: chat.output, { oldValue, newValue in
+		.onAppear {
+			isInitialAppearance = true
+			startAnimation()
+		}
+		.onChange(of: chat.output) { oldValue, newValue in
+			startAnimation()
 			if let font  = NSFont(name: "Helvetica Neue", size: 16) {
 				hasMoreThanTwoLines = countLines(in: newValue,
 												 width: width - 40,
 												 font: font) > 20
 			}
-		})
+		}
 		.onChange(of: chatCardViewManager.highlightedText) { _, newValue in
 			if !newValue.isEmpty {
 				chatViewManager.setHighlightedCard(chat.id)
@@ -168,6 +179,32 @@ struct ChatCardView: View {
 		)
 	}
 	
+	private func startAnimation() {
+		guard currentIndex == 0 else { return }
+		disablePromptEntry = true
+		isAnimating = true
+		timer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { timer in
+			guard currentIndex < chat.output.count else {
+				timer.invalidate()
+				isAnimating = false
+				disablePromptEntry = false
+				return
+			}
+			
+			let index = chat.output.index(chat.output.startIndex, offsetBy: currentIndex)
+			displayedText += String(chat.output[index])
+			currentIndex += 1
+		}
+	}
+	
+	private func stopAnimation() {
+		timer?.invalidate()
+		timer = nil
+		displayedText = chat.output
+		isAnimating = false
+		disablePromptEntry = false
+	}
+	
 	private func countLines(in string: String, width: CGFloat, font: NSFont) -> Int {
 		let attributedString = NSAttributedString(
 			string: string,
@@ -200,22 +237,32 @@ struct ChatCardView: View {
 	}
 
 	private func updateHighlightedText(notification: Notification) {
-		guard let textView = notification.object as? NSTextView else { return }
+		guard let textView = notification.object as? NSTextView,
+			  textView.superview?.superview is NSTextView else { return }
+		
 		textView.insertionPointColor = .clear
-
 		let selectionRange = textView.selectedRange()
+		
+		if isInitialAppearance {
+			isInitialAppearance = false
+			previousSelection = selectionRange
+			return
+		}
+		
+		guard selectionRange != previousSelection && selectionRange.length > 0 else {
+			if !chatCardViewManager.highlightedText.isEmpty {
+				chatCardViewManager.highlightedText = ""
+				chatCardViewManager.setAIExplainPopup(false)
+			}
+			previousSelection = selectionRange
+			return
+		}
+		previousSelection = selectionRange
 
 		DispatchQueue.main.async {
-			if selectionRange.length > 0 {
-				if let substringRange = Range(selectionRange, in: chat.output) {
-					chatCardViewManager.highlightedText = String(chat.output[substringRange])
-					chatCardViewManager.setAIExplainPopup(true)
-				}
-			} else {
-				if !chatCardViewManager.highlightedText.isEmpty {
-					chatCardViewManager.highlightedText = ""
-					chatCardViewManager.setAIExplainPopup(false)
-				}
+			if let substringRange = Range(selectionRange, in: chat.output) {
+				chatCardViewManager.highlightedText = String(chat.output[substringRange])
+				chatCardViewManager.setAIExplainPopup(true)
 			}
 		}
 	}

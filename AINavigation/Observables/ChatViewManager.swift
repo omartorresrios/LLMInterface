@@ -24,7 +24,9 @@ final class ChatViewManager: Identifiable {
 		let chatId = UUID().uuidString
 		let newChat = Chat(id: chatId, prompt: prompt, output: "", status: .pending)
 		chats.append(newChat)
-		prompt = ""
+		DispatchQueue.main.async {
+			self.prompt = ""
+		}
 		guard let url = URL(string: "http://127.0.0.1:11434/api/chat") else {
 			print("Invalid URL")
 			return
