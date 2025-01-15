@@ -238,7 +238,8 @@ struct ChatCardView: View {
 
 	private func updateHighlightedText(notification: Notification) {
 		guard let textView = notification.object as? NSTextView,
-			  textView.superview?.superview is NSTextView else { return }
+			  let scrollView = textView.enclosingScrollView,
+			  scrollView.superview != nil else { return }
 		
 		textView.insertionPointColor = .clear
 		let selectionRange = textView.selectedRange()
