@@ -114,7 +114,11 @@ struct ChatCardView: View {
 		.background(Color.gray.opacity(0.2))
 		.cornerRadius(8)
 		.onChange(of: chat.output, { oldValue, newValue in
-			hasMoreThanTwoLines = countLines(in: newValue) > 2
+			if let font  = NSFont(name: "Helvetica Neue", size: 16) {
+				hasMoreThanTwoLines = countLines(in: newValue,
+												 width: width - 40,
+												 font: font) > 20
+			}
 		})
 		.onChange(of: chatCardViewManager.highlightedText) { _, newValue in
 			if !newValue.isEmpty {
@@ -164,14 +168,30 @@ struct ChatCardView: View {
 		)
 	}
 	
-	private func countLines(in string: String) -> Int {
-			let lines = string.components(separatedBy: .newlines)
-			return lines.reduce(0) { count, line in
-				let words = line.split(separator: " ")
-				let lineCount = words.count / 10 + (words.count % 10 > 0 ? 1 : 0)
-				return count + max(1, lineCount)
-			}
+	private func countLines(in string: String, width: CGFloat, font: NSFont) -> Int {
+		let attributedString = NSAttributedString(
+			string: string,
+			attributes: [.font: font]
+		)
+		let textStorage = NSTextStorage(attributedString: attributedString)
+		let textContainer = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
+		textContainer.lineFragmentPadding = 0
+		
+		let layoutManager = NSLayoutManager()
+		layoutManager.addTextContainer(textContainer)
+		textStorage.addLayoutManager(layoutManager)
+		
+		var numberOfLines = 0
+		var index = 0
+		var lineRange = NSRange(location: 0, length: 0)
+		
+		while index < textStorage.length {
+			layoutManager.lineFragmentRect(forGlyphAt: index, effectiveRange: &lineRange)
+			index = NSMaxRange(lineRange)
+			numberOfLines += 1
 		}
+		return numberOfLines
+	}
 	
 	private func clearTextSelection(notification: Notification) {
 		guard let textView = notification.object as? NSTextView else { return }
