@@ -156,7 +156,7 @@ struct ChatCardView: View {
 						.cornerRadius(8)
 						.shadow(radius: 5)
 					}
-					.position(x: 50, y: 50)
+					.frame(maxWidth: .infinity, maxHeight: .infinity)
 				} else if chatCardViewManager.showDeepDiveView &&
 							chatViewManager.activeAIExplainPopupViewId == chat.id {
 					VStack {
@@ -174,6 +174,7 @@ struct ChatCardView: View {
 					.foregroundColor(Color(NSColor.labelColor))
 					.cornerRadius(8)
 					.shadow(radius: 5)
+					.frame(maxWidth: .infinity, maxHeight: .infinity)
 				}
 			}
 		)
