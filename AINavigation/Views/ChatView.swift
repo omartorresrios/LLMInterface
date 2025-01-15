@@ -9,9 +9,10 @@ import SwiftUI
 
 struct ChatView: View {
 	@Binding var chatViewManager: ChatViewManager
-	var addNewPrompt: (Chat) -> Void
 	@State private var disablePromptEntry = false
 	@FocusState private var isFocused: Bool
+	@State private var scrollViewProxy: ScrollViewProxy?
+	var addNewPrompt: (Chat) -> Void
 	
 	var body: some View {
 		GeometryReader { geometry in
@@ -47,6 +48,9 @@ struct ChatView: View {
 								.onChange(of: chatViewManager.chats.count) { _, newValue in
 									scrollToBottom(proxy: scrollProxy)
 								}
+							}
+							.onAppear {
+								scrollViewProxy = scrollProxy
 							}
 							promptInputView
 						}
@@ -88,6 +92,7 @@ struct ChatView: View {
 				Button(action: {
 					if let index = chatViewManager.chats.firstIndex(where: { $0.id == chat.id }) {
 						chatViewManager.selectedPromptIndex = index
+						scrollToPrompt(chat.id)
 					}
 				}) {
 					Text(chat.prompt)
@@ -97,6 +102,14 @@ struct ChatView: View {
 			}
 		}
 		.padding()
+	}
+	
+	private func scrollToPrompt(_ chatId: String) {
+		if let scrollViewProxy = scrollViewProxy {
+			withAnimation {
+				scrollViewProxy.scrollTo(chatId)
+			}
+		}
 	}
 
 	private var promptInputView: some View {
