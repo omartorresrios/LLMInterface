@@ -98,6 +98,7 @@ struct ChatCardView: View {
 								.frame(height: 50) // Height of blur effect
 							}
 						}
+						.disabled(!chatCardViewManager.isExpanded)
 						if chatCardViewManager.showThreadView {
 							VStack {
 								Button {
@@ -168,7 +169,7 @@ struct ChatCardView: View {
 		guard currentIndex == 0 else { return }
 		disablePromptEntry = true
 		isAnimating = true
-		timer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { timer in
+		timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { timer in
 			guard currentIndex < chat.output.count else {
 				timer.invalidate()
 				isAnimating = false
