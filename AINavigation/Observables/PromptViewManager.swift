@@ -1,5 +1,5 @@
 //
-//  ChatCardViewManager.swift
+//  PromptViewManager.swift
 //  AINavigation
 //
 //  Created by Omar Torres on 1/11/25.
@@ -9,7 +9,7 @@
 import Observation
 
 @Observable
-final class ChatCardViewManager {
+final class PromptViewManager {
 	var showThreadView = false
 	var isExpanded = true
 	var showDeepDiveView = false

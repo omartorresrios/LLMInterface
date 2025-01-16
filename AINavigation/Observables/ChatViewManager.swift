@@ -12,17 +12,20 @@ import Observation
 final class ChatViewManager: Identifiable {
 	let id = UUID()
 	var name = "Unnamed chat"
-	var chats: [Chat] = []
+	var conversationItems: [ConversationItem] = []
 	var prompt = ""
 	var searchText = ""
 	var selectedPromptIndex: Int?
 	var showSidebar = false
-	var currentlySelectedChatId: String?
+	var currentSelectedConversationItemId: String?
 	
 	func sendPrompt() {
-		let chatId = UUID().uuidString
-		let newChat = Chat(id: chatId, prompt: prompt, output: "", status: .pending)
-		chats.append(newChat)
+		let conversationId = UUID().uuidString
+		let newConversation = ConversationItem(id: conversationId,
+											   prompt: prompt,
+											   output: "",
+											   outputStatus: .pending)
+		conversationItems.append(newConversation)
 		DispatchQueue.main.async {
 			self.prompt = ""
 		}
@@ -36,7 +39,7 @@ final class ChatViewManager: Identifiable {
 			"messages": [
 				[
 					"role": "user",
-					"content": newChat.prompt
+					"content": newConversation.prompt
 				]
 			],
 			"stream": false
@@ -69,11 +72,11 @@ final class ChatViewManager: Identifiable {
 				   let message = json["message"] as? [String: Any],
 				   let content = message["content"] as? String {
 					DispatchQueue.main.async {
-						if let index = self?.chats.firstIndex(where: { $0.id == chatId }) {
-							var updatedChat = self?.chats[index]
-							updatedChat?.output = content
-							updatedChat?.status = .completed
-							self?.chats[index] = updatedChat ?? newChat
+						if let index = self?.conversationItems.firstIndex(where: { $0.id == conversationId }) {
+							var updatedConversation = self?.conversationItems[index]
+							updatedConversation?.output = content
+							updatedConversation?.outputStatus = .completed
+							self?.conversationItems[index] = updatedConversation ?? newConversation
 						}
 					}
 				}
@@ -83,13 +86,13 @@ final class ChatViewManager: Identifiable {
 		}.resume()
 	}
 	
-	func addPrompt(chat: Chat) {
-		chats.append(chat)
+	func addPrompt(conversationItem: ConversationItem) {
+		conversationItems.append(conversationItem)
 	}
 	
-	func removeChat(_ chatId: String) {
-		if let index = chats.firstIndex(where: { $0.id == chatId }) {
-			chats.remove(at: index)
+	func removeConversationItem(_ conversationId: String) {
+		if let index = conversationItems.firstIndex(where: { $0.id == conversationId }) {
+			conversationItems.remove(at: index)
 		}
 	}
 	

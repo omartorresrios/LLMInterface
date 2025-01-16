@@ -68,8 +68,9 @@ struct ChatContainersView: View {
 		}
 	}
 	
-	private func addNewPrompt(with chat: Chat, to chatViewManager: ChatViewManager) {
-		chatViewManager.addPrompt(chat: chat)
+	private func addNewPrompt(with conversationItem: ConversationItem, 
+							  to chatViewManager: ChatViewManager) {
+		chatViewManager.addPrompt(conversationItem: conversationItem)
 	}
 }
 

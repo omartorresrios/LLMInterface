@@ -12,7 +12,7 @@ struct ChatView: View {
 	@State private var disablePromptEntry = false
 	@State private var scrollViewProxy: ScrollViewProxy?
 	@FocusState private var isFocused: Bool
-	var addNewPrompt: (Chat) -> Void
+	var addNewPrompt: (ConversationItem) -> Void
 	
 	var body: some View {
 		GeometryReader { geometry in
@@ -22,16 +22,16 @@ struct ChatView: View {
 						.frame(width: geometry.size.width * 0.2)
 				}
 				VStack(alignment: .leading, spacing: 0) {
-					if chatViewManager.chats.isEmpty {
+					if chatViewManager.conversationItems.isEmpty {
 						promptInputView
 							.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 					} else {
 						ScrollViewReader { scrollProxy in
 							ScrollView {
 								LazyVStack(alignment: .leading, spacing: 8) {
-									ForEach(chatViewManager.chats, id: \.id) { chat in
-										chatCardView(chat: chat, geometry: geometry)
-											.id(chat.id)
+									ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
+										promptView(conversationItem: conversationItem, geometry: geometry)
+											.id(conversationItem.id)
 									}
 									.padding()
 									.background(.blue.opacity(0.3))
@@ -45,7 +45,7 @@ struct ChatView: View {
 									chatViewManager.showSidebar = height > geometry.size.height
 								}
 								.frame(width: getWidth(geometryWidth: geometry.size.width))
-								.onChange(of: chatViewManager.chats.count) { _, newValue in
+								.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
 									scrollToBottom(proxy: scrollProxy)
 								}
 							}
@@ -63,8 +63,8 @@ struct ChatView: View {
 	private func scrollToBottom(proxy: ScrollViewProxy) {
 		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 			withAnimation {
-				if let lastChat = chatViewManager.chats.last {
-					proxy.scrollTo(lastChat.id, anchor: .bottom)
+				if let lastCoversation = chatViewManager.conversationItems.last {
+					proxy.scrollTo(lastCoversation.id, anchor: .bottom)
 				}
 			}
 		}
@@ -74,12 +74,12 @@ struct ChatView: View {
 		return geometryWidth * (chatViewManager.showSidebar ? 0.8 : 1.0)
 	}
 	
-	private func chatCardView(chat: Chat, geometry: GeometryProxy) -> some View {
-		ChatCardView(chat: chat,
-					 width: getWidth(geometryWidth: geometry.size.width),
-					 disablePromptEntry: $disablePromptEntry,
-					 chatViewManager: chatViewManager,
-					 removePrompt: removePrompt)
+	private func promptView(conversationItem: ConversationItem, geometry: GeometryProxy) -> some View {
+		PromptView(conversationItem: conversationItem,
+				   width: getWidth(geometryWidth: geometry.size.width),
+				   disablePromptEntry: $disablePromptEntry,
+				   chatViewManager: chatViewManager,
+				   removePrompt: removeConversationItem)
 	}
 	
 	private var promptsSidebarView: some View {
@@ -88,15 +88,15 @@ struct ChatView: View {
 				.font(.headline)
 				.padding()
 			Divider()
-			ForEach(chatViewManager.chats, id: \.id) { chat in
+			ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
 				Button(action: {
-					if let index = chatViewManager.chats.firstIndex(where: { $0.id == chat.id }) {
+					if let index = chatViewManager.conversationItems.firstIndex(where: { $0.id == conversationItem.id }) {
 						chatViewManager.selectedPromptIndex = index
-						scrollToPrompt(chat.id)
+						scrollToConversationItem(conversationItem.id)
 					}
 				}) {
-					Text(chat.prompt)
-						.foregroundColor(chatViewManager.selectedPromptIndex == chatViewManager.chats.firstIndex(where: { $0.id == chat.id }) ? .blue : .primary)
+					Text(conversationItem.prompt)
+						.foregroundColor(chatViewManager.selectedPromptIndex == chatViewManager.conversationItems.firstIndex(where: { $0.id == conversationItem.id }) ? .blue : .primary)
 				}
 				.padding(.vertical, 4)
 			}
@@ -104,10 +104,10 @@ struct ChatView: View {
 		.padding()
 	}
 	
-	private func scrollToPrompt(_ chatId: String) {
+	private func scrollToConversationItem(_ id: String) {
 		if let scrollViewProxy = scrollViewProxy {
 			withAnimation {
-				scrollViewProxy.scrollTo(chatId)
+				scrollViewProxy.scrollTo(id)
 			}
 		}
 	}
@@ -135,7 +135,7 @@ struct ChatView: View {
 			.disabled(chatViewManager.prompt.isEmpty)
 		}
 		.disabled(disablePromptEntry)
-		.padding(.horizontal, chatViewManager.chats.count > 0 ? 0 : 16)
+		.padding(.horizontal, chatViewManager.conversationItems.count > 0 ? 0 : 16)
 		.onAppear {
 			DispatchQueue.main.async {
 				isFocused = true
@@ -155,11 +155,11 @@ struct ChatView: View {
 		isFocused = true
 	}
 	
-	private func removePrompt(_ chatId: String) {
+	private func removeConversationItem(_ id: String) {
 		withAnimation(.easeInOut(duration: 0.1)) {
-			chatViewManager.removeChat(chatId)
+			chatViewManager.removeConversationItem(id)
 		}
-		if chatViewManager.chats.isEmpty {
+		if chatViewManager.conversationItems.isEmpty {
 			isFocused = true
 		 }
 	}

@@ -1,5 +1,5 @@
 //
-//  ChatCardView.swift
+//  PromptView.swift
 //  AINavigation
 //
 //  Created by Omar Torres on 11/22/24.
@@ -7,11 +7,11 @@
 
 import SwiftUI
 
-struct ChatCardView: View {
-	let chat: Chat
+struct PromptView: View {
+	let conversationItem: ConversationItem
 	let width: CGFloat
 	@Binding var disablePromptEntry: Bool
-	@State var chatCardViewManager = ChatCardViewManager()
+	@State var promptViewManager = PromptViewManager()
 	@Bindable var chatViewManager: ChatViewManager
 	@State private var hasMoreThanTwoLines = false
 	var removePrompt: (String) -> Void
@@ -20,12 +20,12 @@ struct ChatCardView: View {
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
 	
-	init(chat: Chat,
+	init(conversationItem: ConversationItem,
 		 width: CGFloat,
 		 disablePromptEntry: Binding<Bool>,
 		 chatViewManager: ChatViewManager,
 		 removePrompt: @escaping (String) -> Void) {
-		self.chat = chat
+		self.conversationItem = conversationItem
 		self.width = width
 		_disablePromptEntry = disablePromptEntry
 		self.chatViewManager = chatViewManager
@@ -36,23 +36,23 @@ struct ChatCardView: View {
 		ZStack {
 			VStack(alignment: .leading) {
 				HStack {
-					Text(chat.prompt)
+					Text(conversationItem.prompt)
 						.font(.headline)
 					Button(action: {
-						if chatCardViewManager.showAIExplainPopupView {
-							chatCardViewManager.setAIExplainPopup(false)
+						if promptViewManager.showAIExplainPopupView {
+							promptViewManager.setAIExplainPopup(false)
 						}
-						chatCardViewManager.toggleThreadView()
-						chatCardViewManager.highlightedText = ""
+						promptViewManager.toggleThreadView()
+						promptViewManager.highlightedText = ""
 					}) {
 						Image(systemName: "arrow.triangle.branch")
 							.foregroundColor(.red)
 					}
-					.disabled(chatCardViewManager.showThreadView)
+					.disabled(promptViewManager.showThreadView)
 					Button {
-						removePrompt(chat.id)
-						if chatCardViewManager.showDeepDiveView {
-							chatCardViewManager.setDeepDiveView(false)
+						removePrompt(conversationItem.id)
+						if promptViewManager.showDeepDiveView {
+							promptViewManager.setDeepDiveView(false)
 						}
 					} label: {
 						Image(systemName: "trash")
@@ -60,21 +60,21 @@ struct ChatCardView: View {
 					}
 					if hasMoreThanTwoLines && !isAnimating {
 						Button {
-							chatCardViewManager.toggleIsExpanded()
+							promptViewManager.toggleIsExpanded()
 						} label: {
-							Text(chatCardViewManager.isExpanded ? "Collapse" : "Show more")
+							Text(promptViewManager.isExpanded ? "Collapse" : "Show more")
 								.font(.footnote)
 								.foregroundColor(.blue)
 						}
 					}
 				}
-				.disabled(chatCardViewManager.showDeepDiveView || chat.status == .pending)
+				.disabled(promptViewManager.showDeepDiveView || conversationItem.outputStatus == .pending)
 				
-				if chat.status == .completed {
+				if conversationItem.outputStatus == .completed {
 					HStack(alignment: .top) {
 						ZStack(alignment: .bottom) {
 							TextEditor(text: .constant(displayedText))
-								.frame(height: chatCardViewManager.isExpanded ? nil : 100)
+								.frame(height: promptViewManager.isExpanded ? nil : 100)
 								.font(.custom("Helvetica Neue", size: 16))
 								.scrollIndicators(.hidden)
 								.scrollDisabled(true)
@@ -86,7 +86,7 @@ struct ChatCardView: View {
 								.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
 									updateHighlightedText(notification: notification)
 								}
-							if !chatCardViewManager.isExpanded {
+							if !promptViewManager.isExpanded {
 								LinearGradient(
 									gradient: Gradient(colors: [
 										Color.gray.opacity(0),
@@ -98,11 +98,11 @@ struct ChatCardView: View {
 								.frame(height: 50) // Height of blur effect
 							}
 						}
-						.disabled(!chatCardViewManager.isExpanded)
-						if chatCardViewManager.showThreadView {
+						.disabled(!promptViewManager.isExpanded)
+						if promptViewManager.showThreadView {
 							VStack {
 								Button {
-									chatCardViewManager.toggleThreadView()
+									promptViewManager.toggleThreadView()
 								} label: {
 									Image(systemName: "arrow.right")
 								}
@@ -122,7 +122,7 @@ struct ChatCardView: View {
 			.onAppear {
 				startAnimation()
 			}
-			.onChange(of: chat.output) { oldValue, newValue in
+			.onChange(of: conversationItem.output) { oldValue, newValue in
 				startAnimation()
 				if let font  = NSFont(name: "Helvetica Neue", size: 16) {
 					hasMoreThanTwoLines = countLines(in: newValue,
@@ -130,12 +130,12 @@ struct ChatCardView: View {
 													 font: font) > 20
 				}
 			}
-			if chatCardViewManager.showAIExplainPopupView &&
-				chatViewManager.currentlySelectedChatId == chat.id {
+			if promptViewManager.showAIExplainPopupView &&
+				chatViewManager.currentSelectedConversationItemId == conversationItem.id {
 				VStack {
 					Button("Explain") {
-						chatCardViewManager.setAIExplainPopup(false)
-						chatCardViewManager.setDeepDiveView(true)
+						promptViewManager.setAIExplainPopup(false)
+						promptViewManager.setDeepDiveView(true)
 						disablePromptEntry = true
 					}
 					.padding()
@@ -144,13 +144,13 @@ struct ChatCardView: View {
 					.shadow(radius: 5)
 				}
 				.frame(maxWidth: .infinity, maxHeight: .infinity)
-			} else if chatCardViewManager.showDeepDiveView {
+			} else if promptViewManager.showDeepDiveView {
 				VStack {
 					Text("This is a random explanation from the model.")
 						.padding()
 					Button("Close") {
-						chatCardViewManager.setDeepDiveView(false)
-						chatCardViewManager.highlightedText = ""
+						promptViewManager.setDeepDiveView(false)
+						promptViewManager.highlightedText = ""
 						disablePromptEntry = false
 					}
 					.buttonStyle(.bordered)
@@ -170,15 +170,15 @@ struct ChatCardView: View {
 		disablePromptEntry = true
 		isAnimating = true
 		timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { timer in
-			guard currentIndex < chat.output.count else {
+			guard currentIndex < conversationItem.output.count else {
 				timer.invalidate()
 				isAnimating = false
 				disablePromptEntry = false
 				return
 			}
 			
-			let index = chat.output.index(chat.output.startIndex, offsetBy: currentIndex)
-			displayedText += String(chat.output[index])
+			let index = conversationItem.output.index(conversationItem.output.startIndex, offsetBy: currentIndex)
+			displayedText += String(conversationItem.output[index])
 			currentIndex += 1
 		}
 	}
@@ -186,7 +186,7 @@ struct ChatCardView: View {
 	private func stopAnimation() {
 		timer?.invalidate()
 		timer = nil
-		displayedText = chat.output
+		displayedText = conversationItem.output
 		isAnimating = false
 		disablePromptEntry = false
 	}
@@ -226,40 +226,40 @@ struct ChatCardView: View {
 		guard let textView = notification.object as? NSTextView,
 			  let scrollView = textView.enclosingScrollView,
 			  scrollView.superview != nil else { return }
-		guard textView.string == chat.output else { return }
+		guard textView.string == conversationItem.output else { return }
 		print("helloooo")
 		textView.insertionPointColor = .clear
 		let selectionRange = textView.selectedRange()
 		
 		guard selectionRange.length > 0 else {
-			if !chatCardViewManager.highlightedText.isEmpty {
-				chatCardViewManager.highlightedText = ""
-				chatCardViewManager.setAIExplainPopup(false)
+			if !promptViewManager.highlightedText.isEmpty {
+				promptViewManager.highlightedText = ""
+				promptViewManager.setAIExplainPopup(false)
 			}
 			return
 		}
 
 		DispatchQueue.main.async {
-			if let substringRange = Range(selectionRange, in: chat.output) {
-				if chatViewManager.currentlySelectedChatId != chat.id {
+			if let substringRange = Range(selectionRange, in: conversationItem.output) {
+				if chatViewManager.currentSelectedConversationItemId != conversationItem.id {
 					// Clear previous selection
-					chatViewManager.currentlySelectedChatId = chat.id
+					chatViewManager.currentSelectedConversationItemId = conversationItem.id
 					// This will trigger the onChange in all other cards
-					chatCardViewManager.highlightedText = ""
-					chatCardViewManager.setAIExplainPopup(false)
+					promptViewManager.highlightedText = ""
+					promptViewManager.setAIExplainPopup(false)
 				}
 				// Set new selection
-				chatCardViewManager.highlightedText = String(chat.output[substringRange])
-				chatCardViewManager.setAIExplainPopup(true)
+				promptViewManager.highlightedText = String(conversationItem.output[substringRange])
+				promptViewManager.setAIExplainPopup(true)
 			}
 		}
 	}
 }
 
 #Preview {
-	ChatCardView(chat: Chat.cards.first!, 
-				 width: 20,
-				 disablePromptEntry: .constant(false), 
-				 chatViewManager: ChatViewManager(), 
-				 removePrompt: { _ in })
+	PromptView(conversationItem: ConversationItem.cards.first!, 
+			   width: 20,
+			   disablePromptEntry: .constant(false),
+			   chatViewManager: ChatViewManager(),
+			   removePrompt: { _ in })
 }

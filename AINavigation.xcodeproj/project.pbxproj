@@ -19,9 +19,9 @@
 		249116E72CEA4C23008E6FC6 /* AINavigationUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249116E62CEA4C23008E6FC6 /* AINavigationUITestsLaunchTests.swift */; };
 		249CFDCC2CF0CD3200C09CAA /* ChatContainersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDCB2CF0CD3200C09CAA /* ChatContainersView.swift */; };
 		249CFDD12CF0D29C00C09CAA /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD02CF0D29C00C09CAA /* ChatView.swift */; };
-		249CFDD52CF0D31000C09CAA /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD42CF0D31000C09CAA /* Chat.swift */; };
-		249CFDD72CF0D37D00C09CAA /* ChatCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD62CF0D37D00C09CAA /* ChatCardView.swift */; };
-		249F72812D32BF8000AC7169 /* ChatCardViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249F72802D32BF8000AC7169 /* ChatCardViewManager.swift */; };
+		249CFDD52CF0D31000C09CAA /* ConversationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD42CF0D31000C09CAA /* ConversationItem.swift */; };
+		249CFDD72CF0D37D00C09CAA /* PromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249CFDD62CF0D37D00C09CAA /* PromptView.swift */; };
+		249F72812D32BF8000AC7169 /* PromptViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249F72802D32BF8000AC7169 /* PromptViewManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,9 +59,9 @@
 		249116E62CEA4C23008E6FC6 /* AINavigationUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AINavigationUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		249CFDCB2CF0CD3200C09CAA /* ChatContainersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatContainersView.swift; sourceTree = "<group>"; };
 		249CFDD02CF0D29C00C09CAA /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
-		249CFDD42CF0D31000C09CAA /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
-		249CFDD62CF0D37D00C09CAA /* ChatCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCardView.swift; sourceTree = "<group>"; };
-		249F72802D32BF8000AC7169 /* ChatCardViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCardViewManager.swift; sourceTree = "<group>"; };
+		249CFDD42CF0D31000C09CAA /* ConversationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationItem.swift; sourceTree = "<group>"; };
+		249CFDD62CF0D37D00C09CAA /* PromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptView.swift; sourceTree = "<group>"; };
+		249F72802D32BF8000AC7169 /* PromptViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptViewManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,7 +94,7 @@
 			children = (
 				24538B242D0F1E7A0099DB0E /* ChatContainersManager.swift */,
 				24538B272D0F20260099DB0E /* ChatViewManager.swift */,
-				249F72802D32BF8000AC7169 /* ChatCardViewManager.swift */,
+				249F72802D32BF8000AC7169 /* PromptViewManager.swift */,
 			);
 			path = Observables;
 			sourceTree = "<group>";
@@ -106,7 +106,7 @@
 				246454FA2D15D44300004262 /* EditChatNameView.swift */,
 				24538B292D0F205B0099DB0E /* ChatsSidebarView.swift */,
 				249CFDD02CF0D29C00C09CAA /* ChatView.swift */,
-				249CFDD62CF0D37D00C09CAA /* ChatCardView.swift */,
+				249CFDD62CF0D37D00C09CAA /* PromptView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -114,7 +114,7 @@
 		24538B2E2D0F22A60099DB0E /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				249CFDD42CF0D31000C09CAA /* Chat.swift */,
+				249CFDD42CF0D31000C09CAA /* ConversationItem.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -312,10 +312,10 @@
 				246454FB2D15D44300004262 /* EditChatNameView.swift in Sources */,
 				24538B252D0F1E7A0099DB0E /* ChatContainersManager.swift in Sources */,
 				249CFDCC2CF0CD3200C09CAA /* ChatContainersView.swift in Sources */,
-				249CFDD72CF0D37D00C09CAA /* ChatCardView.swift in Sources */,
-				249CFDD52CF0D31000C09CAA /* Chat.swift in Sources */,
+				249CFDD72CF0D37D00C09CAA /* PromptView.swift in Sources */,
+				249CFDD52CF0D31000C09CAA /* ConversationItem.swift in Sources */,
 				24538B2A2D0F205B0099DB0E /* ChatsSidebarView.swift in Sources */,
-				249F72812D32BF8000AC7169 /* ChatCardViewManager.swift in Sources */,
+				249F72812D32BF8000AC7169 /* PromptViewManager.swift in Sources */,
 				24538B282D0F20260099DB0E /* ChatViewManager.swift in Sources */,
 				249116C92CEA4C21008E6FC6 /* AINavigationApp.swift in Sources */,
 				249CFDD12CF0D29C00C09CAA /* ChatView.swift in Sources */,
