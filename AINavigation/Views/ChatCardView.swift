@@ -19,8 +19,6 @@ struct ChatCardView: View {
 	@State private var isAnimating = false
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
-	@State private var previousSelection: NSRange = NSRange(location: 0, length: 0)
-	@State private var isInitialAppearance: Bool = true
 	
 	init(chat: Chat,
 		 width: CGFloat,
@@ -35,149 +33,135 @@ struct ChatCardView: View {
 	}
 	
 	var body: some View {
-		VStack(alignment: .leading) {
-			HStack {
-				Text(chat.prompt)
-					.font(.headline)
-				Button(action: {
-					if chatCardViewManager.showAIExplainPopupView {
-						chatCardViewManager.setAIExplainPopup(false)
-					}
-					chatCardViewManager.toggleThreadView()
-					chatCardViewManager.highlightedText = ""
-				}) {
-					Image(systemName: "arrow.triangle.branch")
-						.foregroundColor(.red)
-				}
-				.disabled(chatCardViewManager.showThreadView)
-				Button {
-					removePrompt(chat.id)
-					if chatCardViewManager.showDeepDiveView {
-						chatCardViewManager.setDeepDiveView(false)
-					}
-				} label: {
-					Image(systemName: "trash")
-						.foregroundColor(.red)
-				}
-				if hasMoreThanTwoLines && !isAnimating {
-					Button {
-						chatCardViewManager.toggleIsExpanded()
-					} label: {
-						Text(chatCardViewManager.isExpanded ? "Collapse" : "Show more")
-							.font(.footnote)
-							.foregroundColor(.blue)
-					}
-				}
-			}
-			.disabled(chatCardViewManager.showDeepDiveView || chat.status == .pending)
-			
-			if chat.status == .completed {
-				HStack(alignment: .top) {
-					ZStack(alignment: .bottom) {
-						TextEditor(text: .constant(displayedText))
-							.frame(height: chatCardViewManager.isExpanded ? nil : 100)
-							.font(.custom("Helvetica Neue", size: 16))
-							.scrollIndicators(.hidden)
-							.scrollDisabled(true)
-							.scrollContentBackground(.hidden)
-							.background(.clear)
-							.onReceive(NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification)) { notification in
-								clearTextSelection(notification: notification)
-							}
-							.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
-								updateHighlightedText(notification: notification)
-							}
-						if !chatCardViewManager.isExpanded {
-							LinearGradient(
-								gradient: Gradient(colors: [
-									Color.gray.opacity(0),
-									Color.gray.opacity(0.2)
-								]),
-								startPoint: .top,
-								endPoint: .bottom
-							)
-							.frame(height: 50) // Height of blur effect
-						}
-					}
-					if chatCardViewManager.showThreadView {
-						VStack {
-							Button {
-								chatCardViewManager.toggleThreadView()
-							} label: {
-								Image(systemName: "arrow.right")
-							}
-							Text("This is just a test of the pop up view.")
-						}
-					}
-				}
-			} else {
-				ProgressView()
-					.padding(.top, 8)
-			}
-		}
-		.frame(maxWidth: .infinity, alignment: .leading)
-		.padding()
-		.background(Color.gray.opacity(0.2))
-		.cornerRadius(8)
-		.onAppear {
-			isInitialAppearance = true
-			startAnimation()
-		}
-		.onChange(of: chat.output) { oldValue, newValue in
-			startAnimation()
-			if let font  = NSFont(name: "Helvetica Neue", size: 16) {
-				hasMoreThanTwoLines = countLines(in: newValue,
-												 width: width - 40,
-												 font: font) > 20
-			}
-		}
-		.onChange(of: chatCardViewManager.highlightedText) { _, newValue in
-			if !newValue.isEmpty {
-				chatViewManager.setHighlightedCard(chat.id)
-				chatViewManager.setActiveAIExplainPopupViewId(chat.id)
-			}
-		}
-		.onChange(of: chatViewManager.highlightedCardId) { _, newValue in
-			if newValue != chat.id {
-				clearHighlightAndDeepDive()
-			}
-		}
-		.overlay(
-			Group {
-				if chatCardViewManager.showAIExplainPopupView && !chatCardViewManager.highlightedText.isEmpty {
-					VStack {
-						Button("Explain") {
+		ZStack {
+			VStack(alignment: .leading) {
+				HStack {
+					Text(chat.prompt)
+						.font(.headline)
+					Button(action: {
+						if chatCardViewManager.showAIExplainPopupView {
 							chatCardViewManager.setAIExplainPopup(false)
-							chatCardViewManager.setDeepDiveView(true)
-							disablePromptEntry = true
 						}
-						.padding()
-						.background(.red)
-						.cornerRadius(8)
-						.shadow(radius: 5)
+						chatCardViewManager.toggleThreadView()
+						chatCardViewManager.highlightedText = ""
+					}) {
+						Image(systemName: "arrow.triangle.branch")
+							.foregroundColor(.red)
 					}
-					.frame(maxWidth: .infinity, maxHeight: .infinity)
-				} else if chatCardViewManager.showDeepDiveView &&
-							chatViewManager.activeAIExplainPopupViewId == chat.id {
-					VStack {
-						Text("This is a random explanation from the model.")
-							.padding()
-						Button("Close") {
+					.disabled(chatCardViewManager.showThreadView)
+					Button {
+						removePrompt(chat.id)
+						if chatCardViewManager.showDeepDiveView {
 							chatCardViewManager.setDeepDiveView(false)
-							chatCardViewManager.highlightedText = ""
-							disablePromptEntry = false
 						}
-						.buttonStyle(.bordered)
+					} label: {
+						Image(systemName: "trash")
+							.foregroundColor(.red)
+					}
+					if hasMoreThanTwoLines && !isAnimating {
+						Button {
+							chatCardViewManager.toggleIsExpanded()
+						} label: {
+							Text(chatCardViewManager.isExpanded ? "Collapse" : "Show more")
+								.font(.footnote)
+								.foregroundColor(.blue)
+						}
+					}
+				}
+				.disabled(chatCardViewManager.showDeepDiveView || chat.status == .pending)
+				
+				if chat.status == .completed {
+					HStack(alignment: .top) {
+						ZStack(alignment: .bottom) {
+							TextEditor(text: .constant(displayedText))
+								.frame(height: chatCardViewManager.isExpanded ? nil : 100)
+								.font(.custom("Helvetica Neue", size: 16))
+								.scrollIndicators(.hidden)
+								.scrollDisabled(true)
+								.scrollContentBackground(.hidden)
+								.background(.clear)
+								.onReceive(NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification)) { notification in
+									clearTextSelection(notification: notification)
+								}
+								.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
+									updateHighlightedText(notification: notification)
+								}
+							if !chatCardViewManager.isExpanded {
+								LinearGradient(
+									gradient: Gradient(colors: [
+										Color.gray.opacity(0),
+										Color.gray.opacity(0.2)
+									]),
+									startPoint: .top,
+									endPoint: .bottom
+								)
+								.frame(height: 50) // Height of blur effect
+							}
+						}
+						if chatCardViewManager.showThreadView {
+							VStack {
+								Button {
+									chatCardViewManager.toggleThreadView()
+								} label: {
+									Image(systemName: "arrow.right")
+								}
+								Text("This is just a test of the pop up view.")
+							}
+						}
+					}
+				} else {
+					ProgressView()
+						.padding(.top, 8)
+				}
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
+			.padding()
+			.background(Color.gray.opacity(0.2))
+			.cornerRadius(8)
+			.onAppear {
+				startAnimation()
+			}
+			.onChange(of: chat.output) { oldValue, newValue in
+				startAnimation()
+				if let font  = NSFont(name: "Helvetica Neue", size: 16) {
+					hasMoreThanTwoLines = countLines(in: newValue,
+													 width: width - 40,
+													 font: font) > 20
+				}
+			}
+			if chatCardViewManager.showAIExplainPopupView &&
+				chatViewManager.currentlySelectedChatId == chat.id {
+				VStack {
+					Button("Explain") {
+						chatCardViewManager.setAIExplainPopup(false)
+						chatCardViewManager.setDeepDiveView(true)
+						disablePromptEntry = true
 					}
 					.padding()
-					.background(Color(NSColor.windowBackgroundColor))
-					.foregroundColor(Color(NSColor.labelColor))
+					.background(.red)
 					.cornerRadius(8)
 					.shadow(radius: 5)
-					.frame(maxWidth: .infinity, maxHeight: .infinity)
 				}
+				.frame(maxWidth: .infinity, maxHeight: .infinity)
+			} else if chatCardViewManager.showDeepDiveView {
+				VStack {
+					Text("This is a random explanation from the model.")
+						.padding()
+					Button("Close") {
+						chatCardViewManager.setDeepDiveView(false)
+						chatCardViewManager.highlightedText = ""
+						disablePromptEntry = false
+					}
+					.buttonStyle(.bordered)
+				}
+				.padding()
+				.background(Color(NSColor.windowBackgroundColor))
+				.foregroundColor(Color(NSColor.labelColor))
+				.cornerRadius(8)
+				.shadow(radius: 5)
+				.frame(maxWidth: .infinity, maxHeight: .infinity)
 			}
-		)
+		}
 	}
 	
 	private func startAnimation() {
@@ -241,37 +225,33 @@ struct ChatCardView: View {
 		guard let textView = notification.object as? NSTextView,
 			  let scrollView = textView.enclosingScrollView,
 			  scrollView.superview != nil else { return }
-		
+		guard textView.string == chat.output else { return }
+		print("helloooo")
 		textView.insertionPointColor = .clear
 		let selectionRange = textView.selectedRange()
 		
-		if isInitialAppearance {
-			isInitialAppearance = false
-			previousSelection = selectionRange
-			return
-		}
-		
-		guard selectionRange != previousSelection && selectionRange.length > 0 else {
+		guard selectionRange.length > 0 else {
 			if !chatCardViewManager.highlightedText.isEmpty {
 				chatCardViewManager.highlightedText = ""
 				chatCardViewManager.setAIExplainPopup(false)
 			}
-			previousSelection = selectionRange
 			return
 		}
-		previousSelection = selectionRange
 
 		DispatchQueue.main.async {
 			if let substringRange = Range(selectionRange, in: chat.output) {
+				if chatViewManager.currentlySelectedChatId != chat.id {
+					// Clear previous selection
+					chatViewManager.currentlySelectedChatId = chat.id
+					// This will trigger the onChange in all other cards
+					chatCardViewManager.highlightedText = ""
+					chatCardViewManager.setAIExplainPopup(false)
+				}
+				// Set new selection
 				chatCardViewManager.highlightedText = String(chat.output[substringRange])
 				chatCardViewManager.setAIExplainPopup(true)
 			}
 		}
-	}
-	
-	private func clearHighlightAndDeepDive() {
-		chatCardViewManager.highlightedText = ""
-		chatCardViewManager.setAIExplainPopup(false)
 	}
 }
 
