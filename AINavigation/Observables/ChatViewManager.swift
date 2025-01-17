@@ -17,6 +17,7 @@ final class ChatViewManager: Identifiable {
 	var searchText = ""
 	var selectedPromptIndex: Int?
 	var showSidebar = false
+	var showAIExplanationView = false
 	var currentSelectedConversationItemId: String?
 	
 	func sendPrompt() {

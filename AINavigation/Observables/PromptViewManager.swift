@@ -12,8 +12,7 @@ import Observation
 final class PromptViewManager {
 	var showThreadView = false
 	var isExpanded = true
-	var showDeepDiveView = false
-	var showAIExplainPopupView = false
+	var showAIExplainButton = false
 	var highlightedText = ""
 	
 	func toggleThreadView() {
@@ -24,11 +23,7 @@ final class PromptViewManager {
 		isExpanded.toggle()
 	}
 	
-	func setAIExplainPopup(_ newState: Bool) {
-		showAIExplainPopupView = newState
-	}
-	
-	func setDeepDiveView(_ newState: Bool) {
-		showDeepDiveView = newState
+	func setAIExplainButton(_ newState: Bool) {
+		showAIExplainButton = newState
 	}
 }

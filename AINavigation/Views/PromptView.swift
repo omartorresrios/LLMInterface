@@ -19,6 +19,7 @@ struct PromptView: View {
 	@State private var isAnimating = false
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
+	@State private var selectionFrame: CGRect = .zero
 	
 	init(conversationItem: ConversationItem,
 		 width: CGFloat,
@@ -39,8 +40,8 @@ struct PromptView: View {
 					Text(conversationItem.prompt)
 						.font(.headline)
 					Button(action: {
-						if promptViewManager.showAIExplainPopupView {
-							promptViewManager.setAIExplainPopup(false)
+						if promptViewManager.showAIExplainButton {
+							promptViewManager.setAIExplainButton(false)
 						}
 						promptViewManager.toggleThreadView()
 						promptViewManager.highlightedText = ""
@@ -51,8 +52,9 @@ struct PromptView: View {
 					.disabled(promptViewManager.showThreadView)
 					Button {
 						removePrompt(conversationItem.id)
-						if promptViewManager.showDeepDiveView {
-							promptViewManager.setDeepDiveView(false)
+						// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
+						if chatViewManager.showAIExplanationView {
+							chatViewManager.showAIExplanationView.toggle()
 						}
 					} label: {
 						Image(systemName: "trash")
@@ -68,7 +70,7 @@ struct PromptView: View {
 						}
 					}
 				}
-				.disabled(promptViewManager.showDeepDiveView || conversationItem.outputStatus == .pending)
+				.disabled(chatViewManager.showAIExplanationView || conversationItem.outputStatus == .pending)
 				
 				if conversationItem.outputStatus == .completed {
 					HStack(alignment: .top) {
@@ -85,6 +87,7 @@ struct PromptView: View {
 								}
 								.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
 									updateHighlightedText(notification: notification)
+									updateSelectionFrame(notification: notification)
 								}
 							if !promptViewManager.isExpanded {
 								LinearGradient(
@@ -130,37 +133,42 @@ struct PromptView: View {
 													 font: font) > 20
 				}
 			}
-			if promptViewManager.showAIExplainPopupView &&
+			if promptViewManager.showAIExplainButton &&
 				chatViewManager.currentSelectedConversationItemId == conversationItem.id {
-				VStack {
-					Button("Explain") {
-						promptViewManager.setAIExplainPopup(false)
-						promptViewManager.setDeepDiveView(true)
-						disablePromptEntry = true
-					}
-					.padding()
-					.background(.red)
-					.cornerRadius(8)
-					.shadow(radius: 5)
-				}
-				.frame(maxWidth: .infinity, maxHeight: .infinity)
-			} else if promptViewManager.showDeepDiveView {
-				VStack {
-					Text("This is a random explanation from the model.")
-						.padding()
-					Button("Close") {
-						promptViewManager.setDeepDiveView(false)
-						promptViewManager.highlightedText = ""
-						disablePromptEntry = false
-					}
-					.buttonStyle(.bordered)
-				}
-				.padding()
-				.background(Color(NSColor.windowBackgroundColor))
-				.foregroundColor(Color(NSColor.labelColor))
-				.cornerRadius(8)
-				.shadow(radius: 5)
-				.frame(maxWidth: .infinity, maxHeight: .infinity)
+				AIExplainButton
+			}
+		}
+	}
+	
+	private var AIExplainButton: some View {
+		Button("Explain") {
+			promptViewManager.setAIExplainButton(false)
+			chatViewManager.showAIExplanationView = true
+			disablePromptEntry = true
+		}
+		.padding(8)
+		.background(.red)
+		.foregroundColor(.white)
+		.cornerRadius(8)
+		.shadow(radius: 5)
+		.position(x: selectionFrame.maxX, y: selectionFrame.maxY)
+	}
+	
+	private func updateSelectionFrame(notification: Notification) {
+		guard let textView = notification.object as? NSTextView,
+			  let range = textView.selectedRanges.first as? NSRange,
+			  range.length > 0 else {
+			selectionFrame = .zero
+			return
+		}
+		
+		let glyphRange = textView.layoutManager?.glyphRange(forCharacterRange: range,
+															actualCharacterRange: nil)
+		if let glyphRange = glyphRange {
+			let boundingRect = textView.layoutManager?.boundingRect(forGlyphRange: glyphRange,
+																	in: textView.textContainer!)
+			if let rect = boundingRect {
+				selectionFrame = rect
 			}
 		}
 	}
@@ -227,14 +235,14 @@ struct PromptView: View {
 			  let scrollView = textView.enclosingScrollView,
 			  scrollView.superview != nil else { return }
 		guard textView.string == conversationItem.output else { return }
-		print("helloooo")
+		
 		textView.insertionPointColor = .clear
 		let selectionRange = textView.selectedRange()
 		
 		guard selectionRange.length > 0 else {
 			if !promptViewManager.highlightedText.isEmpty {
 				promptViewManager.highlightedText = ""
-				promptViewManager.setAIExplainPopup(false)
+				promptViewManager.setAIExplainButton(false)
 			}
 			return
 		}
@@ -246,11 +254,11 @@ struct PromptView: View {
 					chatViewManager.currentSelectedConversationItemId = conversationItem.id
 					// This will trigger the onChange in all other cards
 					promptViewManager.highlightedText = ""
-					promptViewManager.setAIExplainPopup(false)
+					promptViewManager.setAIExplainButton(false)
 				}
 				// Set new selection
 				promptViewManager.highlightedText = String(conversationItem.output[substringRange])
-				promptViewManager.setAIExplainPopup(true)
+				promptViewManager.setAIExplainButton(true)
 			}
 		}
 	}

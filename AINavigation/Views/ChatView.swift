@@ -16,45 +16,67 @@ struct ChatView: View {
 	
 	var body: some View {
 		GeometryReader { geometry in
-			HStack(alignment: .top, spacing: 0) {
-				if chatViewManager.showSidebar {
-					promptsSidebarView
-						.frame(width: geometry.size.width * 0.2)
-				}
-				VStack(alignment: .leading, spacing: 0) {
-					if chatViewManager.conversationItems.isEmpty {
-						promptInputView
-							.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-					} else {
-						ScrollViewReader { scrollProxy in
-							ScrollView {
-								LazyVStack(alignment: .leading, spacing: 8) {
-									ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
-										promptView(conversationItem: conversationItem, geometry: geometry)
-											.id(conversationItem.id)
-									}
-									.padding()
-									.background(.blue.opacity(0.3))
-								}
-								.background(
-									GeometryReader { contentGeometry in
-										Color.clear.preference(key: ContentHeightPreferenceKey.self, value: contentGeometry.size.height)
-									}
-								)
-								.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-									chatViewManager.showSidebar = height > geometry.size.height
-								}
-								.frame(width: getWidth(geometryWidth: geometry.size.width))
-								.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
-									scrollToBottom(proxy: scrollProxy)
-								}
-							}
-							.onAppear {
-								scrollViewProxy = scrollProxy
-							}
+			ZStack {
+				HStack(alignment: .top, spacing: 0) {
+					if chatViewManager.showSidebar {
+						promptsSidebarView
+							.frame(width: geometry.size.width * 0.2)
+					}
+					VStack(alignment: .leading, spacing: 0) {
+						if chatViewManager.conversationItems.isEmpty {
 							promptInputView
+								.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+						} else {
+							ScrollViewReader { scrollProxy in
+								ScrollView {
+									LazyVStack(alignment: .leading, spacing: 8) {
+										ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
+											promptView(conversationItem: conversationItem, geometry: geometry)
+												.id(conversationItem.id)
+										}
+										.padding()
+										.background(.blue.opacity(0.3))
+									}
+									.background(
+										GeometryReader { contentGeometry in
+											Color.clear.preference(key: ContentHeightPreferenceKey.self, value: contentGeometry.size.height)
+										}
+									)
+									.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
+										chatViewManager.showSidebar = height > geometry.size.height
+									}
+									.frame(width: getWidth(geometryWidth: geometry.size.width))
+									.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
+										scrollToBottom(proxy: scrollProxy)
+									}
+								}
+								.onAppear {
+									scrollViewProxy = scrollProxy
+								}
+								promptInputView
+							}
 						}
 					}
+				}
+				
+				if chatViewManager.showAIExplanationView {
+					Color.black.opacity(0.3)
+						.edgesIgnoringSafeArea(.all)
+					VStack {
+						Text("This is a random explanation from the model.")
+							.padding()
+						Button("Close") {
+							chatViewManager.showAIExplanationView = false
+							disablePromptEntry = false
+						}
+						.buttonStyle(.bordered)
+					}
+					.padding()
+					.frame(width: min(geometry.size.width * 0.8, 500))
+					.background(Color(NSColor.windowBackgroundColor))
+					.foregroundColor(Color(NSColor.labelColor))
+					.cornerRadius(8)
+					.shadow(radius: 5)
 				}
 			}
 		}
