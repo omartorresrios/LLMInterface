@@ -21,6 +21,7 @@ struct PromptView: View {
 	@State private var timer: Timer?
 	@State private var selectionFrame: CGRect = .zero
 	@Binding var highlightedText: String
+	@State private var textView: NSTextView?
 	
 	init(conversationItem: ConversationItem,
 		 width: CGFloat,
@@ -51,6 +52,9 @@ struct PromptView: View {
 					.disabled(promptViewManager.showThreadView)
 					Button {
 						removePrompt(conversationItem.id)
+						if let textView = textView {
+							chatViewManager.unregister(textView)
+						}
 						// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
 						if chatViewManager.showAIExplanationView {
 							chatViewManager.showAIExplanationView.toggle()
@@ -181,7 +185,7 @@ struct PromptView: View {
 		guard currentIndex == 0 else { return }
 		disablePromptEntry = true
 		isAnimating = true
-		timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { timer in
+		timer = Timer.scheduledTimer(withTimeInterval: 0.005, repeats: true) { timer in
 			guard currentIndex < conversationItem.output.count else {
 				timer.invalidate()
 				isAnimating = false
@@ -238,19 +242,21 @@ struct PromptView: View {
 		guard let textView = notification.object as? NSTextView,
 			  let scrollView = textView.enclosingScrollView,
 			  scrollView.superview != nil else { return }
-		guard textView.string == conversationItem.output else { return }
 		
-		textView.insertionPointColor = .clear
+		chatViewManager.register(textView)
+		self.textView = textView
 		let selectionRange = textView.selectedRange()
 		
-		guard selectionRange.length > 0 else {
-			if !promptViewManager.highlightedText.isEmpty {
-				promptViewManager.highlightedText = ""
-				promptViewManager.setAIExplainButton(false)
-			}
+		guard textView.string == conversationItem.output,
+			  let range = Range(selectionRange, in: textView.string),
+			  !String(textView.string[range]).isEmpty else {
+			promptViewManager.setAIExplainButton(false)
 			return
 		}
-
+		
+		chatViewManager.clearSelections(except: textView)
+		textView.insertionPointColor = .clear
+		
 		DispatchQueue.main.async {
 			if let substringRange = Range(selectionRange, in: conversationItem.output) {
 				if chatViewManager.currentSelectedConversationItemId != conversationItem.id {

@@ -7,6 +7,7 @@
 
 import Foundation
 import Observation
+import AppKit
 
 @Observable
 final class ChatViewManager: Identifiable {
@@ -20,6 +21,7 @@ final class ChatViewManager: Identifiable {
 	var showAIExplanationView = false
 	var currentSelectedConversationItemId: String?
 	var AIExplainItem = ConversationItem()
+	var textViews: [NSTextView] = []
 	
 	func sendPrompt() {
 		let conversationId = UUID().uuidString
@@ -124,5 +126,21 @@ final class ChatViewManager: Identifiable {
 	
 	func setName(_ name: String) {
 		self.name = name
+	}
+	
+	func register(_ textView: NSTextView) {
+		if !textViews.contains(textView) {
+			textViews.append(textView)
+		}
+	}
+
+	func unregister(_ textView: NSTextView) {
+		textViews.removeAll { $0 == textView }
+	}
+
+	func clearSelections(except textView: NSTextView) {
+		for tv in textViews where tv != textView {
+			tv.setSelectedRange(NSRange(location: 0, length: 0))
+		}
 	}
 }

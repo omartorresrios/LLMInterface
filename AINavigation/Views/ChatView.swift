@@ -106,7 +106,7 @@ struct ChatView: View {
 		guard currentIndex == 0 else { return }
 		disablePromptEntry = true
 		isAnimating = true
-		timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { timer in
+		timer = Timer.scheduledTimer(withTimeInterval: 0.005, repeats: true) { timer in
 			guard currentIndex < chatViewManager.AIExplainItem.output.count else {
 				timer.invalidate()
 				isAnimating = false
