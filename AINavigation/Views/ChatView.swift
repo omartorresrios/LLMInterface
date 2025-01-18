@@ -13,6 +13,11 @@ struct ChatView: View {
 	@State private var scrollViewProxy: ScrollViewProxy?
 	@FocusState private var isFocused: Bool
 	var addNewPrompt: (ConversationItem) -> Void
+	@State var highlightedText = ""
+	@State private var displayedText = ""
+	@State private var isAnimating = false//To-do We are not using it currently. See if we can use for some validation
+	@State private var currentIndex = 0
+	@State private var timer: Timer?
 	
 	var body: some View {
 		GeometryReader { geometry in
@@ -63,22 +68,57 @@ struct ChatView: View {
 					Color.black.opacity(0.3)
 						.edgesIgnoringSafeArea(.all)
 					VStack {
-						Text("This is a random explanation from the model.")
-							.padding()
-						Button("Close") {
-							chatViewManager.showAIExplanationView = false
-							disablePromptEntry = false
+						Text("Explaining -> \(highlightedText)")
+						if chatViewManager.AIExplainItem.outputStatus == .pending {
+							ProgressView()
+						} else {
+							ScrollView {
+								Text(displayedText)
+									.padding()
+							}
+							Button("Close") {
+								chatViewManager.showAIExplanationView = false
+								chatViewManager.resetAIExplainItem()
+								displayedText = ""
+								disablePromptEntry = false
+							}
+							.buttonStyle(.bordered)
 						}
-						.buttonStyle(.bordered)
+					}
+					.onAppear {
+						startAnimation()
+					}
+					.onChange(of: chatViewManager.AIExplainItem) { _, _ in
+						startAnimation()
 					}
 					.padding()
-					.frame(width: min(geometry.size.width * 0.8, 500))
+					.frame(maxWidth: geometry.size.width * 0.5, maxHeight: geometry.size.height * 0.8)
 					.background(Color(NSColor.windowBackgroundColor))
 					.foregroundColor(Color(NSColor.labelColor))
 					.cornerRadius(8)
 					.shadow(radius: 5)
 				}
 			}
+		}
+	}
+	
+	private func startAnimation() {
+		guard currentIndex == 0 else { return }
+		disablePromptEntry = true
+		isAnimating = true
+		timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { timer in
+			guard currentIndex < chatViewManager.AIExplainItem.output.count else {
+				timer.invalidate()
+				isAnimating = false
+				disablePromptEntry = false
+				currentIndex = 0
+				return
+			}
+			
+			let index = chatViewManager.AIExplainItem.output.index(chatViewManager.AIExplainItem.output.startIndex,
+																   offsetBy: currentIndex)
+			displayedText += String(chatViewManager.AIExplainItem.output[index])
+			currentIndex += 1
 		}
 	}
 	
@@ -101,7 +141,8 @@ struct ChatView: View {
 				   width: getWidth(geometryWidth: geometry.size.width),
 				   disablePromptEntry: $disablePromptEntry,
 				   chatViewManager: chatViewManager,
-				   removePrompt: removeConversationItem)
+				   removePrompt: removeConversationItem,
+				   highlightedText: $highlightedText)
 	}
 	
 	private var promptsSidebarView: some View {

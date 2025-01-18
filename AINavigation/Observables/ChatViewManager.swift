@@ -19,6 +19,7 @@ final class ChatViewManager: Identifiable {
 	var showSidebar = false
 	var showAIExplanationView = false
 	var currentSelectedConversationItemId: String?
+	var AIExplainItem = ConversationItem()
 	
 	func sendPrompt() {
 		let conversationId = UUID().uuidString
@@ -30,6 +31,33 @@ final class ChatViewManager: Identifiable {
 		DispatchQueue.main.async {
 			self.prompt = ""
 		}
+		request(prompt: newConversation.prompt) { content in
+			DispatchQueue.main.async { [weak self] in
+				guard let self else { return }
+				if let index = self.conversationItems.firstIndex(where: { $0.id == conversationId }) {
+					var updatedConversation = self.conversationItems[index]
+					updatedConversation.output = content
+					updatedConversation.outputStatus = .completed
+					self.conversationItems[index] = updatedConversation
+				}
+			}
+		}
+	}
+	
+	func sendAIExplainPrompt() {
+		let prompt = "Can you explain more of this with a summary?: \(self.prompt)"
+		AIExplainItem.prompt = prompt
+		self.prompt = ""
+		request(prompt: prompt) { content in
+			DispatchQueue.main.async { [weak self] in
+				guard let self else { return }
+				self.AIExplainItem.output = content
+				self.AIExplainItem.outputStatus = .completed
+			}
+		}
+	}
+	
+	private func request(prompt: String, completion: @escaping (String) -> Void) {
 		guard let url = URL(string: "http://127.0.0.1:11434/api/chat") else {
 			print("Invalid URL")
 			return
@@ -40,7 +68,7 @@ final class ChatViewManager: Identifiable {
 			"messages": [
 				[
 					"role": "user",
-					"content": newConversation.prompt
+					"content": prompt
 				]
 			],
 			"stream": false
@@ -57,7 +85,7 @@ final class ChatViewManager: Identifiable {
 			return
 		}
 
-		URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+		URLSession.shared.dataTask(with: request) { data, response, error in
 			if let error = error {
 				print("Error: \(error)")
 				return
@@ -72,19 +100,16 @@ final class ChatViewManager: Identifiable {
 				if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
 				   let message = json["message"] as? [String: Any],
 				   let content = message["content"] as? String {
-					DispatchQueue.main.async {
-						if let index = self?.conversationItems.firstIndex(where: { $0.id == conversationId }) {
-							var updatedConversation = self?.conversationItems[index]
-							updatedConversation?.output = content
-							updatedConversation?.outputStatus = .completed
-							self?.conversationItems[index] = updatedConversation ?? newConversation
-						}
-					}
+					completion(content)
 				}
 			} catch {
 				print("Error parsing JSON: \(error)")
 			}
 		}.resume()
+	}
+	
+	func resetAIExplainItem() {
+		AIExplainItem.reset()
 	}
 	
 	func addPrompt(conversationItem: ConversationItem) {

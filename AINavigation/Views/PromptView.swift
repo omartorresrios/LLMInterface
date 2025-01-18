@@ -20,17 +20,20 @@ struct PromptView: View {
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
 	@State private var selectionFrame: CGRect = .zero
+	@Binding var highlightedText: String
 	
 	init(conversationItem: ConversationItem,
 		 width: CGFloat,
 		 disablePromptEntry: Binding<Bool>,
 		 chatViewManager: ChatViewManager,
-		 removePrompt: @escaping (String) -> Void) {
+		 removePrompt: @escaping (String) -> Void,
+		 highlightedText: Binding<String>) {
 		self.conversationItem = conversationItem
 		self.width = width
 		_disablePromptEntry = disablePromptEntry
 		self.chatViewManager = chatViewManager
 		self.removePrompt = removePrompt
+		_highlightedText = highlightedText
 	}
 	
 	var body: some View {
@@ -40,11 +43,7 @@ struct PromptView: View {
 					Text(conversationItem.prompt)
 						.font(.headline)
 					Button(action: {
-						if promptViewManager.showAIExplainButton {
-							promptViewManager.setAIExplainButton(false)
-						}
 						promptViewManager.toggleThreadView()
-						promptViewManager.highlightedText = ""
 					}) {
 						Image(systemName: "arrow.triangle.branch")
 							.foregroundColor(.red)
@@ -133,6 +132,9 @@ struct PromptView: View {
 													 font: font) > 20
 				}
 			}
+			.onChange(of: promptViewManager.highlightedText) { _, newValue in
+				highlightedText = newValue
+			}
 			if promptViewManager.showAIExplainButton &&
 				chatViewManager.currentSelectedConversationItemId == conversationItem.id {
 				AIExplainButton
@@ -143,6 +145,8 @@ struct PromptView: View {
 	private var AIExplainButton: some View {
 		Button("Explain") {
 			promptViewManager.setAIExplainButton(false)
+			chatViewManager.prompt = promptViewManager.highlightedText
+			chatViewManager.sendAIExplainPrompt()
 			chatViewManager.showAIExplanationView = true
 			disablePromptEntry = true
 		}
@@ -269,5 +273,6 @@ struct PromptView: View {
 			   width: 20,
 			   disablePromptEntry: .constant(false),
 			   chatViewManager: ChatViewManager(),
-			   removePrompt: { _ in })
+			   removePrompt: { _ in },
+			   highlightedText: .constant(""))
 }

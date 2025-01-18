@@ -11,9 +11,25 @@ struct ConversationItem: Hashable {
 	var output: String
 	var outputStatus: OutputStatus
 		
+	init(id: String = "",
+		 prompt: String = "",
+		 output: String = "",
+		 outputStatus: OutputStatus = .pending) {
+		self.id = id
+		self.prompt = prompt
+		self.output = output
+		self.outputStatus = outputStatus
+	}
+	
 	enum OutputStatus {
 		case pending
 		case completed
+	}
+	
+	mutating func reset() {
+		prompt = ""
+		output = ""
+		outputStatus = .pending
 	}
 	
 	mutating func setPrompt(_ prompt: String) {
