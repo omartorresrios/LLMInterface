@@ -81,6 +81,7 @@ struct ChatView: View {
 								chatViewManager.resetAIExplainItem()
 								displayedText = ""
 								disablePromptEntry = false
+								stopAnimation()
 							}
 							.buttonStyle(.bordered)
 						}
@@ -98,6 +99,9 @@ struct ChatView: View {
 					.cornerRadius(8)
 					.shadow(radius: 5)
 				}
+			}
+			.onChange(of: disablePromptEntry) { _, newValue in
+				isFocused = !newValue
 			}
 		}
 	}
@@ -120,6 +124,12 @@ struct ChatView: View {
 			displayedText += String(chatViewManager.AIExplainItem.output[index])
 			currentIndex += 1
 		}
+	}
+	
+	private func stopAnimation() {
+		timer?.invalidate()
+		timer = nil
+		isAnimating = false
 	}
 	
 	private func scrollToBottom(proxy: ScrollViewProxy) {
@@ -215,7 +225,6 @@ struct ChatView: View {
 //			addNewPrompt(newPrompt)
 //		}
 		chatViewManager.sendPrompt()
-		isFocused = true
 	}
 	
 	private func removeConversationItem(_ id: String) {

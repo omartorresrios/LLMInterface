@@ -90,7 +90,6 @@ struct PromptView: View {
 								}
 								.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
 									updateHighlightedText(notification: notification)
-									updateSelectionFrame(notification: notification)
 								}
 							if !promptViewManager.isExpanded {
 								LinearGradient(
@@ -182,8 +181,10 @@ struct PromptView: View {
 	}
 	
 	private func startAnimation() {
-		guard currentIndex == 0 else { return }
 		disablePromptEntry = true
+		guard !conversationItem.output.isEmpty,
+			  currentIndex == 0 else { return }
+		
 		isAnimating = true
 		timer = Timer.scheduledTimer(withTimeInterval: 0.005, repeats: true) { timer in
 			guard currentIndex < conversationItem.output.count else {
@@ -254,6 +255,12 @@ struct PromptView: View {
 			return
 		}
 		
+		let selectedText = String(textView.string[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+		guard !selectedText.isEmpty else {
+			promptViewManager.setAIExplainButton(false)
+			return
+		}
+		
 		chatViewManager.clearSelections(except: textView)
 		textView.insertionPointColor = .clear
 		
@@ -269,6 +276,7 @@ struct PromptView: View {
 				// Set new selection
 				promptViewManager.highlightedText = String(conversationItem.output[substringRange])
 				promptViewManager.setAIExplainButton(true)
+				updateSelectionFrame(notification: notification)
 			}
 		}
 	}
