@@ -7,6 +7,188 @@
 
 import SwiftUI
 
+struct TextEditor: NSViewRepresentable {
+	var chatViewManager: ChatViewManager
+	var promptViewManager: PromptViewManager
+	let conversationItem: ConversationItem
+	let text: String
+	var width: CGFloat
+	@Binding var height: CGFloat
+	@Binding var textView: NSTextView?
+	
+	class Coordinator: NSObject, NSTextViewDelegate {
+		var parent: TextEditor
+		
+		init(_ parent: TextEditor) {
+			self.parent = parent
+		}
+		
+		func textViewDidChangeSelection(_ notification: Notification) {
+			guard let textView = notification.object as? NSTextView else { return }
+			parent.chatViewManager.register(textView)
+			DispatchQueue.main.async { [weak self] in
+				self?.parent.textView = textView
+			}
+			let selectedRange = textView.selectedRange()
+				
+			if selectedRange.length > 0 {
+				let selectedText = (textView.string as NSString).substring(with: selectedRange).trimmingCharacters(in: .whitespacesAndNewlines)
+				guard !selectedText.isEmpty else {
+					parent.promptViewManager.setAIExplainButton(false)
+					return
+				}
+				
+				parent.chatViewManager.clearSelections(except: textView)
+				
+				if let layoutManager = textView.layoutManager,
+				   let textContainer = textView.textContainer {
+					let glyphRange = layoutManager.glyphRange(forCharacterRange: selectedRange, actualCharacterRange: nil)
+					let boundingRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+					let containerOrigin = textView.textContainerOrigin
+					
+					if parent.chatViewManager.currentSelectedConversationItemId != parent.conversationItem.id {
+						parent.chatViewManager.currentSelectedConversationItemId = parent.conversationItem.id
+					}
+					DispatchQueue.main.async { [weak self] in
+						self?.parent.promptViewManager.highlightedText = selectedText
+						self?.parent.promptViewManager.setAIExplainButton(true)
+						self?.parent.promptViewManager.buttonPosition = CGPoint(
+							x: containerOrigin.x + boundingRect.maxX,
+							y: containerOrigin.y + boundingRect.minY
+						)
+					}
+				}
+			} else {
+				DispatchQueue.main.async { [weak self] in
+					self?.parent.promptViewManager.highlightedText = ""
+					self?.parent.promptViewManager.setAIExplainButton(false)
+				}
+			}
+		}
+	}
+	
+	func makeCoordinator() -> Coordinator {
+		Coordinator(self)
+	}
+
+	func makeNSView(context: Context) -> NSScrollView {
+		let scrollView = NSScrollView()
+		let textView = NSTextView()
+
+		textView.isEditable = false
+		textView.isSelectable = true
+		textView.backgroundColor = .clear
+		textView.drawsBackground = true
+		textView.isRichText = true
+		textView.font = .systemFont(ofSize: NSFont.systemFontSize)
+		textView.textContainer?.lineFragmentPadding = 0
+		textView.textContainer?.widthTracksTextView = true
+		textView.isHorizontallyResizable = false
+		textView.isVerticallyResizable = true
+		textView.autoresizingMask = [.width]
+		textView.delegate = context.coordinator
+		scrollView.documentView = textView
+		scrollView.hasVerticalScroller = false
+		scrollView.verticalScrollElasticity = .none
+		scrollView.hasHorizontalScroller = false
+		scrollView.autohidesScrollers = true
+		
+		return scrollView
+	}
+	
+	func updateNSView(_ scrollView: NSScrollView, context: Context) {
+		guard let textView = scrollView.documentView as? NSTextView else { return }
+		
+		textView.textStorage?.setAttributedString(renderMarkdown(text))
+		
+		textView.frame.size.width = width
+		scrollView.frame.size.width = width
+		textView.layoutManager?.ensureLayout(for: textView.textContainer!)
+		
+		let totalHeight = textView.layoutManager?.usedRect(for: textView.textContainer!).height ?? 0
+		let newHeight: CGFloat
+		if promptViewManager.isExpanded {
+			newHeight = totalHeight
+		} else {
+			newHeight = min(100, totalHeight)
+		}
+
+		DispatchQueue.main.async {
+			self.height = newHeight
+			scrollView.frame.size.height = newHeight
+		}
+	}
+	
+	private func renderMarkdown(_ markdown: String) -> NSAttributedString {
+		let attributedString = NSMutableAttributedString(string: "")
+
+		let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false)
+		for line in lines {
+			if line.starts(with: "# ") {
+				let headerText = String(line.dropFirst(2))
+				let header = NSAttributedString(
+					string: "\(headerText)\n",
+					attributes: [
+						.font: NSFont.systemFont(ofSize: 24, weight: .bold)
+					]
+				)
+				attributedString.append(header)
+			} else if line.starts(with: "## ") {
+				let subHeaderText = String(line.dropFirst(3))
+				let subHeader = NSAttributedString(
+					string: "\(subHeaderText)\n",
+					attributes: [
+						.font: NSFont.systemFont(ofSize: 20, weight: .semibold)
+					]
+				)
+				attributedString.append(subHeader)
+			} else if line.starts(with: "- ") {
+				let bulletPointText = String(line.dropFirst(2))
+				let bulletPoint = NSAttributedString(
+					string: "• \(bulletPointText)\n",
+					attributes: [
+						.font: NSFont.systemFont(ofSize: 14)
+					]
+				)
+				attributedString.append(bulletPoint)
+			} else {
+				// Regular text
+				let paragraph = applyBoldStyle(to: String(line))
+				attributedString.append(paragraph)
+				attributedString.append(NSAttributedString(string: "\n"))
+			}
+		}
+
+		return attributedString
+	}
+	
+	private func applyBoldStyle(to text: String) -> NSAttributedString {
+		let attributedString = NSMutableAttributedString(string: text)
+
+		// Regex pattern for bold (**text**)
+		let boldPattern = "\\*\\*(.*?)\\*\\*"
+
+		if let regex = try? NSRegularExpression(pattern: boldPattern) {
+			let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+			for match in matches.reversed() {
+				let fullRange = match.range // Full range, including ** **
+				let capturedRange = match.range(at: 1) // Captured group range for the text inside ** **
+
+				// Extract and style the bold text
+				let boldText = (text as NSString).substring(with: capturedRange)
+				let boldAttributedString = NSAttributedString(
+					string: boldText,
+					attributes: [.font: NSFont.boldSystemFont(ofSize: 14)]
+				)
+
+				// Replace the entire match range (including ** **) with the styled bold text
+				attributedString.replaceCharacters(in: fullRange, with: boldAttributedString)
+			}
+		}
+		return attributedString
+	}
+}
+
 struct PromptView: View {
 	let conversationItem: ConversationItem
 	let width: CGFloat
@@ -19,9 +201,9 @@ struct PromptView: View {
 	@State private var isAnimating = false
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
-	@State private var selectionFrame: CGRect = .zero
 	@Binding var highlightedText: String
 	@State private var textView: NSTextView?
+	@State private var textEditorHeight: CGFloat = 0
 	
 	init(conversationItem: ConversationItem,
 		 width: CGFloat,
@@ -78,19 +260,14 @@ struct PromptView: View {
 				if conversationItem.outputStatus == .completed {
 					HStack(alignment: .top) {
 						ZStack(alignment: .bottom) {
-							TextEditor(text: .constant(displayedText))
-								.frame(height: promptViewManager.isExpanded ? nil : 100)
-								.font(.custom("Helvetica Neue", size: 16))
-								.scrollIndicators(.hidden)
-								.scrollDisabled(true)
-								.scrollContentBackground(.hidden)
-								.background(.clear)
-								.onReceive(NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification)) { notification in
-									clearTextSelection(notification: notification)
-								}
-								.onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { notification in
-									updateHighlightedText(notification: notification)
-								}
+							TextEditor(chatViewManager: chatViewManager,
+									   promptViewManager: promptViewManager,
+									   conversationItem: conversationItem,
+									   text: displayedText,
+									   width: width - 64,
+									   height: $textEditorHeight,
+									   textView: $textView)
+							.frame(height: textEditorHeight)
 							if !promptViewManager.isExpanded {
 								LinearGradient(
 									gradient: Gradient(colors: [
@@ -158,26 +335,7 @@ struct PromptView: View {
 		.foregroundColor(.white)
 		.cornerRadius(8)
 		.shadow(radius: 5)
-		.position(x: selectionFrame.maxX, y: selectionFrame.maxY)
-	}
-	
-	private func updateSelectionFrame(notification: Notification) {
-		guard let textView = notification.object as? NSTextView,
-			  let range = textView.selectedRanges.first as? NSRange,
-			  range.length > 0 else {
-			selectionFrame = .zero
-			return
-		}
-		
-		let glyphRange = textView.layoutManager?.glyphRange(forCharacterRange: range,
-															actualCharacterRange: nil)
-		if let glyphRange = glyphRange {
-			let boundingRect = textView.layoutManager?.boundingRect(forGlyphRange: glyphRange,
-																	in: textView.textContainer!)
-			if let rect = boundingRect {
-				selectionFrame = rect
-			}
-		}
+		.position(promptViewManager.buttonPosition)
 	}
 	
 	private func startAnimation() {
@@ -231,54 +389,6 @@ struct PromptView: View {
 			numberOfLines += 1
 		}
 		return numberOfLines
-	}
-	
-	private func clearTextSelection(notification: Notification) {
-		guard let textView = notification.object as? NSTextView else { return }
-		textView.insertionPointColor = .clear
-		textView.selectedRange = NSRange(location: 0, length: 0)
-	}
-
-	private func updateHighlightedText(notification: Notification) {
-		guard let textView = notification.object as? NSTextView,
-			  let scrollView = textView.enclosingScrollView,
-			  scrollView.superview != nil else { return }
-		
-		chatViewManager.register(textView)
-		self.textView = textView
-		let selectionRange = textView.selectedRange()
-		
-		guard textView.string == conversationItem.output,
-			  let range = Range(selectionRange, in: textView.string),
-			  !String(textView.string[range]).isEmpty else {
-			promptViewManager.setAIExplainButton(false)
-			return
-		}
-		
-		let selectedText = String(textView.string[range]).trimmingCharacters(in: .whitespacesAndNewlines)
-		guard !selectedText.isEmpty else {
-			promptViewManager.setAIExplainButton(false)
-			return
-		}
-		
-		chatViewManager.clearSelections(except: textView)
-		textView.insertionPointColor = .clear
-		
-		DispatchQueue.main.async {
-			if let substringRange = Range(selectionRange, in: conversationItem.output) {
-				if chatViewManager.currentSelectedConversationItemId != conversationItem.id {
-					// Clear previous selection
-					chatViewManager.currentSelectedConversationItemId = conversationItem.id
-					// This will trigger the onChange in all other cards
-					promptViewManager.highlightedText = ""
-					promptViewManager.setAIExplainButton(false)
-				}
-				// Set new selection
-				promptViewManager.highlightedText = String(conversationItem.output[substringRange])
-				promptViewManager.setAIExplainButton(true)
-				updateSelectionFrame(notification: notification)
-			}
-		}
 	}
 }
 
