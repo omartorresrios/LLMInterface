@@ -39,9 +39,9 @@ struct ChatView: View {
 											promptView(conversationItem: conversationItem, geometry: geometry)
 												.id(conversationItem.id)
 										}
-										.padding()
-										.background(.blue.opacity(0.3))
+										.background(.blue)
 									}
+									.padding()
 									.background(
 										GeometryReader { contentGeometry in
 											Color.clear.preference(key: ContentHeightPreferenceKey.self, value: contentGeometry.size.height)
@@ -50,7 +50,6 @@ struct ChatView: View {
 									.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
 										chatViewManager.showSidebar = height > geometry.size.height
 									}
-									.frame(width: getWidth(geometryWidth: geometry.size.width))
 									.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
 										scrollToBottom(proxy: scrollProxy)
 									}
@@ -62,6 +61,7 @@ struct ChatView: View {
 							}
 						}
 					}
+					.frame(width: getWidth(geometryWidth: geometry.size.width))
 				}
 				
 				if chatViewManager.showAIExplanationView {
@@ -143,7 +143,8 @@ struct ChatView: View {
 	}
 	
 	private func getWidth(geometryWidth: CGFloat) -> CGFloat {
-		return geometryWidth * (chatViewManager.showSidebar ? 0.8 : 1.0)
+		let sidebarWidth = chatViewManager.showSidebar ? geometryWidth * 0.2 : 0
+		return geometryWidth - sidebarWidth
 	}
 	
 	private func promptView(conversationItem: ConversationItem, geometry: GeometryProxy) -> some View {
@@ -241,4 +242,8 @@ struct ContentHeightPreferenceKey: PreferenceKey {
 	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
 		value = max(value, nextValue())
 	}
+}
+
+#Preview {
+	ChatView(chatViewManager: .constant(ChatViewManager()), addNewPrompt: { _ in })
 }
