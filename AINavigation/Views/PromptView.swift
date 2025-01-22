@@ -224,120 +224,138 @@ struct PromptView: View {
 	}
 	
 	var body: some View {
-		ZStack {
-			VStack(alignment: .leading) {
-				HStack {
-					Text(conversationItem.prompt)
-						.font(.custom("HelveticaNeue", size: 18))
-						.bold()
-					Button(action: {
-						promptViewManager.toggleThreadView()
-					}) {
-						Image(systemName: "arrow.triangle.branch")
-							.foregroundColor(.red)
-					}
-					.disabled(promptViewManager.showThreadView)
-					Button {
-						removePrompt(conversationItem.id)
-						if let textView = textView {
-							chatViewManager.unregister(textView)
-						}
-						// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
-						if chatViewManager.showAIExplanationView {
-							chatViewManager.showAIExplanationView.toggle()
-						}
-					} label: {
-						Image(systemName: "trash")
-							.foregroundColor(.red)
-					}
-					if hasMoreThanTwoLines && !isAnimating {
-						Button {
-							promptViewManager.toggleIsExpanded()
-						} label: {
-							Text(promptViewManager.isExpanded ? "Collapse" : "Show more")
-								.font(.footnote)
-								.foregroundColor(.blue)
-						}
+		HStack {
+			ZStack {
+				VStack(alignment: .leading) {
+					topButtonsView
+					
+					if conversationItem.outputStatus == .completed {
+						textEditorView
+					} else {
+						ProgressView()
+							.padding(.top, 8)
 					}
 				}
-				.disabled(chatViewManager.showAIExplanationView || conversationItem.outputStatus == .pending)
+				.frame(maxWidth: .infinity, alignment: .leading)
+				.padding()
+				.background(Color.black)
+				.cornerRadius(8)
+				.onAppear {
+					startAnimation()
+				}
+				.onChange(of: conversationItem.output) { oldValue, newValue in
+					startAnimation()
+					if let font  = NSFont(name: "Helvetica Neue", size: 16) {
+						hasMoreThanTwoLines = countLines(in: newValue,
+														 width: width - 40,
+														 font: font) > 20
+					}
+				}
+				.onChange(of: promptViewManager.highlightedText) { _, newValue in
+					highlightedText = newValue
+				}
 				
-				if conversationItem.outputStatus == .completed {
-					HStack(alignment: .top) {
-						ZStack(alignment: .bottom) {
-							TextEditor(chatViewManager: chatViewManager,
-									   promptViewManager: promptViewManager,
-									   conversationItem: conversationItem,
-									   text: displayedText,
-									   width: width - 64,
-									   height: $textEditorHeight,
-									   textView: $textView)
-							.frame(height: textEditorHeight)
-							if !promptViewManager.isExpanded {
-								LinearGradient(
-									gradient: Gradient(colors: [
-										Color.gray.opacity(0),
-										Color.gray.opacity(0.2)
-									]),
-									startPoint: .top,
-									endPoint: .bottom
-								)
-								.frame(height: 50) // Height of blur effect
-							}
-						}
-						.disabled(!promptViewManager.isExpanded)
-						if promptViewManager.showThreadView {
-							VStack {
-								Button {
-									promptViewManager.toggleThreadView()
-								} label: {
-									Image(systemName: "arrow.right")
-								}
-								Text("This is just a test of the pop up view.")
-							}
-						}
+				if promptViewManager.showAIExplainButton &&
+					chatViewManager.currentSelectedConversationItemId == conversationItem.id {
+					AIExplainButton
+				}
+			}
+			
+			if promptViewManager.showThreadView {
+				VStack {
+					Button {
+						promptViewManager.toggleThreadView()
+					} label: {
+						Image(systemName: "arrow.right")
 					}
-				} else {
-					ProgressView()
-						.padding(.top, 8)
+					Text("This is just a test of the pop up view.")
 				}
-			}
-			.frame(maxWidth: .infinity, alignment: .leading)
-			.padding()
-			.background(Color.gray.opacity(0.2))
-			.cornerRadius(8)
-			.onAppear {
-				startAnimation()
-			}
-			.onChange(of: conversationItem.output) { oldValue, newValue in
-				startAnimation()
-				if let font  = NSFont(name: "Helvetica Neue", size: 16) {
-					hasMoreThanTwoLines = countLines(in: newValue,
-													 width: width - 40,
-													 font: font) > 20
-				}
-			}
-			.onChange(of: promptViewManager.highlightedText) { _, newValue in
-				highlightedText = newValue
-			}
-			if promptViewManager.showAIExplainButton &&
-				chatViewManager.currentSelectedConversationItemId == conversationItem.id {
-				AIExplainButton
 			}
 		}
 	}
 	
+	private var topButtonsView: some View {
+		HStack {
+			Text(conversationItem.prompt)
+				.font(.custom("HelveticaNeue", size: 18))
+				.bold()
+			Button(action: {
+				promptViewManager.toggleThreadView()
+			}) {
+				Image(systemName: "arrow.triangle.branch")
+					.foregroundColor(.red)
+			}
+			.disabled(promptViewManager.showThreadView)
+			Button {
+				removePrompt(conversationItem.id)
+				if let textView = textView {
+					chatViewManager.unregister(textView)
+				}
+				// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
+				if chatViewManager.showAIExplanationView {
+					chatViewManager.showAIExplanationView.toggle()
+				}
+			} label: {
+				Image(systemName: "trash")
+					.foregroundColor(.red)
+			}
+			if hasMoreThanTwoLines && !isAnimating {
+				Button {
+					promptViewManager.toggleIsExpanded()
+				} label: {
+					Text(promptViewManager.isExpanded ? "Collapse" : "Show more")
+						.font(.footnote)
+						.foregroundColor(.blue)
+				}
+			}
+		}
+		.disabled(chatViewManager.showAIExplanationView || conversationItem.outputStatus == .pending)
+	}
+	
+	private var textEditorView: some View {
+		ZStack(alignment: .bottom) {
+			TextEditor(chatViewManager: chatViewManager,
+					   promptViewManager: promptViewManager,
+					   conversationItem: conversationItem,
+					   text: displayedText,
+					   width: width - 64,
+					   height: $textEditorHeight,
+					   textView: $textView)
+			.frame(height: textEditorHeight)
+			if !promptViewManager.isExpanded {
+				LinearGradient(
+					gradient: Gradient(colors: [
+						Color.gray.opacity(0),
+						Color.gray.opacity(0.2)
+					]),
+					startPoint: .top,
+					endPoint: .bottom
+				)
+				.frame(height: 50) // Height of blur effect
+			}
+		}
+		.disabled(!promptViewManager.isExpanded)
+	}
+	
 	private var AIExplainButton: some View {
-		Button("Explain") {
-			promptViewManager.setAIExplainButton(false)
-			chatViewManager.prompt = promptViewManager.highlightedText
-			chatViewManager.sendAIExplainPrompt()
-			chatViewManager.showAIExplanationView = true
-			disablePromptEntry = true
+		VStack {
+			Button("Explain") {
+				promptViewManager.setAIExplainButton(false)
+				chatViewManager.prompt = promptViewManager.highlightedText
+				chatViewManager.sendAIExplainPrompt()
+				chatViewManager.showAIExplanationView = true
+				disablePromptEntry = true
+			}
+			.foregroundColor(.white)
+			Button("Open thread") {
+				promptViewManager.toggleThreadView()
+				promptViewManager.setAIExplainButton(false)
+			}
+			.foregroundColor(.white)
+			
 		}
 		.padding(8)
 		.background(.red)
-		.foregroundColor(.white)
 		.cornerRadius(8)
 		.shadow(radius: 5)
 		.position(promptViewManager.buttonPosition)
