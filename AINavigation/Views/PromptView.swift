@@ -80,7 +80,7 @@ struct TextEditor: NSViewRepresentable {
 		textView.backgroundColor = .clear
 		textView.drawsBackground = true
 		textView.isRichText = true
-		textView.font = .systemFont(ofSize: NSFont.systemFontSize)
+		textView.font = NSFont(name: "HelveticaNeue", size: 14) ?? .systemFont(ofSize: 14)
 		textView.textContainer?.lineFragmentPadding = 0
 		textView.textContainer?.widthTracksTextView = true
 		textView.isHorizontallyResizable = false
@@ -88,6 +88,8 @@ struct TextEditor: NSViewRepresentable {
 		textView.autoresizingMask = [.width]
 		textView.delegate = context.coordinator
 		scrollView.documentView = textView
+		scrollView.contentView.backgroundColor = .clear
+		scrollView.drawsBackground = false
 		scrollView.hasVerticalScroller = false
 		scrollView.verticalScrollElasticity = .none
 		scrollView.hasHorizontalScroller = false
@@ -129,7 +131,7 @@ struct TextEditor: NSViewRepresentable {
 				let header = NSAttributedString(
 					string: "\(headerText)\n",
 					attributes: [
-						.font: NSFont.systemFont(ofSize: 24, weight: .bold)
+						.font: NSFont(name: "HelveticaNeue-Bold", size: 24) ?? .systemFont(ofSize: 24, weight: .bold)
 					]
 				)
 				attributedString.append(header)
@@ -138,7 +140,7 @@ struct TextEditor: NSViewRepresentable {
 				let subHeader = NSAttributedString(
 					string: "\(subHeaderText)\n",
 					attributes: [
-						.font: NSFont.systemFont(ofSize: 20, weight: .semibold)
+						.font: NSFont(name: "HelveticaNeue-Medium", size: 20) ?? .systemFont(ofSize: 20, weight: .semibold)
 					]
 				)
 				attributedString.append(subHeader)
@@ -147,7 +149,7 @@ struct TextEditor: NSViewRepresentable {
 				let bulletPoint = NSAttributedString(
 					string: "• \(bulletPointText)\n",
 					attributes: [
-						.font: NSFont.systemFont(ofSize: 14)
+						.font: NSFont(name: "HelveticaNeue", size: 14) ?? .systemFont(ofSize: 14)
 					]
 				)
 				attributedString.append(bulletPoint)
@@ -155,7 +157,8 @@ struct TextEditor: NSViewRepresentable {
 				// Regular text
 				let paragraph = applyBoldStyle(to: String(line))
 				attributedString.append(paragraph)
-				attributedString.append(NSAttributedString(string: "\n"))
+				attributedString.append(NSAttributedString(string: "\n", attributes: [
+					.font: NSFont(name: "HelveticaNeue", size: 14) ?? .systemFont(ofSize: 14)]))
 			}
 		}
 
@@ -163,7 +166,8 @@ struct TextEditor: NSViewRepresentable {
 	}
 	
 	private func applyBoldStyle(to text: String) -> NSAttributedString {
-		let attributedString = NSMutableAttributedString(string: text)
+		let attributedString = NSMutableAttributedString(string: text, attributes: [
+			.font: NSFont(name: "Helvetica Neue", size: 14) ?? .systemFont(ofSize: 14)])
 
 		// Regex pattern for bold (**text**)
 		let boldPattern = "\\*\\*(.*?)\\*\\*"
@@ -178,7 +182,7 @@ struct TextEditor: NSViewRepresentable {
 				let boldText = (text as NSString).substring(with: capturedRange)
 				let boldAttributedString = NSAttributedString(
 					string: boldText,
-					attributes: [.font: NSFont.boldSystemFont(ofSize: 14)]
+					attributes: [.font: NSFont(name: "HelveticaNeue-Bold", size: 14) ?? .boldSystemFont(ofSize: 14)]
 				)
 
 				// Replace the entire match range (including ** **) with the styled bold text
@@ -224,7 +228,8 @@ struct PromptView: View {
 			VStack(alignment: .leading) {
 				HStack {
 					Text(conversationItem.prompt)
-						.font(.headline)
+						.font(.custom("HelveticaNeue", size: 18))
+						.bold()
 					Button(action: {
 						promptViewManager.toggleThreadView()
 					}) {
