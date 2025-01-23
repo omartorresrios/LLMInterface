@@ -208,6 +208,11 @@ struct PromptView: View {
 	@Binding var highlightedText: String
 	@State private var textView: NSTextView?
 	@State private var textEditorHeight: CGFloat = 0
+	@State private var resizableLeftWidth: CGFloat
+
+	private var rightWidth: CGFloat {
+		promptViewManager.showThreadView ? (max(0, width - resizableLeftWidth - 4)) : 0
+	}
 	
 	init(conversationItem: ConversationItem,
 		 width: CGFloat,
@@ -221,6 +226,7 @@ struct PromptView: View {
 		self.chatViewManager = chatViewManager
 		self.removePrompt = removePrompt
 		_highlightedText = highlightedText
+		_resizableLeftWidth = State(initialValue: width)
 	}
 	
 	var body: some View {
@@ -236,9 +242,7 @@ struct PromptView: View {
 							.padding(.top, 8)
 					}
 				}
-				.frame(maxWidth: .infinity, alignment: .leading)
 				.padding()
-				.background(Color.black)
 				.cornerRadius(8)
 				.onAppear {
 					startAnimation()
@@ -251,6 +255,7 @@ struct PromptView: View {
 														 font: font) > 20
 					}
 				}
+				.frame(maxWidth: resizableLeftWidth)
 				.onChange(of: promptViewManager.highlightedText) { _, newValue in
 					highlightedText = newValue
 				}
@@ -262,6 +267,18 @@ struct PromptView: View {
 			}
 			
 			if promptViewManager.showThreadView {
+				DividerView()
+					.frame(width: 4)
+					.background(Color.gray)
+					.gesture(
+						DragGesture()
+							.onChanged { value in
+								let newWidth = resizableLeftWidth + value.translation.width
+								let maxLeftWidth = width * 0.9 // Left view must leave room for right view
+								let minLeftWidth = width * 0.1 // Left view must have a minimum width
+								resizableLeftWidth = min(max(newWidth, minLeftWidth), maxLeftWidth)
+							}
+					)
 				VStack {
 					Button {
 						promptViewManager.toggleThreadView()
@@ -270,6 +287,14 @@ struct PromptView: View {
 					}
 					Text("This is just a test of the pop up view.")
 				}
+				.frame(width: rightWidth)
+			}
+		}
+		.onChange(of: promptViewManager.showThreadView) { _, newValue in
+			if newValue {
+				resizableLeftWidth = min(width * 0.7, width * 0.9) // Clamp to a max of 90%
+			} else {
+				resizableLeftWidth = width // Full width when thread view is hidden
 			}
 		}
 	}
@@ -417,7 +442,7 @@ struct PromptView: View {
 
 #Preview {
 	PromptView(conversationItem: ConversationItem.cards.first!, 
-			   width: 20,
+			   width: 600,
 			   disablePromptEntry: .constant(false),
 			   chatViewManager: ChatViewManager(),
 			   removePrompt: { _ in },
