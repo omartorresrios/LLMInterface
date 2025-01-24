@@ -21,88 +21,69 @@ struct ChatView: View {
 	
 	var body: some View {
 		GeometryReader { geometry in
-			ZStack {
+//			ZStack {
 				HStack(alignment: .top, spacing: 0) {
-					if chatViewManager.showSidebar {
-						promptsSidebarView
-							.frame(width: geometry.size.width * 0.2)
-					}
-					VStack(alignment: .leading, spacing: 0) {
-						if chatViewManager.conversationItems.isEmpty {
-							promptInputView
-								.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-						} else {
-							ScrollViewReader { scrollProxy in
-								ScrollView {
-									LazyVStack(alignment: .leading, spacing: 8) {
-										ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
-											promptView(conversationItem: conversationItem, geometry: geometry)
-												.id(conversationItem.id)
-										}
-										.background(.blue)
-									}
-									.padding()
-									.background(
-										GeometryReader { contentGeometry in
-											Color.clear.preference(key: ContentHeightPreferenceKey.self, value: contentGeometry.size.height)
-										}
-									)
-									.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-										chatViewManager.showSidebar = height > geometry.size.height
-									}
-									.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
-										scrollToBottom(proxy: scrollProxy)
-									}
-								}
-								.onAppear {
-									scrollViewProxy = scrollProxy
-								}
-								promptInputView
-							}
+//					if chatViewManager.showSidebar {
+//						promptsSidebarView
+//							.frame(width: geometry.size.width * 0.2)
+//					}
+						ConversationsScrollView(chatViewManager: chatViewManager,
+												disablePromptEntry: disablePromptEntry,
+												highlightedText: $highlightedText,
+												scrollViewProxy: $scrollViewProxy,
+												width: getWidth(geometryWidth: geometry.size.width),
+												isThreadView: false)
+						.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
+							chatViewManager.showSidebar = height > geometry.size.height
+						}
+//					}
+					.frame(width: getWidth(geometryWidth: geometry.size.width))
+					.onChange(of: chatViewManager.conversationItems.count) { _, _ in
+						if let scrollViewProxy = scrollViewProxy {
+							scrollToBottom(proxy: scrollViewProxy)
 						}
 					}
-					.frame(width: getWidth(geometryWidth: geometry.size.width))
 				}
 				
-				if chatViewManager.showAIExplanationView {
-					Color.black.opacity(0.3)
-						.edgesIgnoringSafeArea(.all)
-					VStack {
-						Text("Explaining -> \(highlightedText)")
-						if chatViewManager.AIExplainItem.outputStatus == .pending {
-							ProgressView()
-						} else {
-							ScrollView {
-								Text(displayedText)
-									.padding()
-							}
-							Button("Close") {
-								chatViewManager.showAIExplanationView = false
-								chatViewManager.resetAIExplainItem()
-								displayedText = ""
-								disablePromptEntry = false
-								stopAnimation()
-							}
-							.buttonStyle(.bordered)
-						}
-					}
-					.onAppear {
-						startAnimation()
-					}
-					.onChange(of: chatViewManager.AIExplainItem) { _, _ in
-						startAnimation()
-					}
-					.padding()
-					.frame(maxWidth: geometry.size.width * 0.5, maxHeight: geometry.size.height * 0.8)
-					.background(Color(NSColor.windowBackgroundColor))
-					.foregroundColor(Color(NSColor.labelColor))
-					.cornerRadius(8)
-					.shadow(radius: 5)
-				}
-			}
-			.onChange(of: disablePromptEntry) { _, newValue in
-				isFocused = !newValue
-			}
+//				if chatViewManager.showAIExplanationView {
+//					Color.black.opacity(0.3)
+//						.edgesIgnoringSafeArea(.all)
+//					VStack {
+//						Text("Explaining -> \(highlightedText)")
+//						if chatViewManager.AIExplainItem.outputStatus == .pending {
+//							ProgressView()
+//						} else {
+//							ScrollView {
+//								Text(displayedText)
+//									.padding()
+//							}
+//							Button("Close") {
+//								chatViewManager.showAIExplanationView = false
+//								chatViewManager.resetAIExplainItem()
+//								displayedText = ""
+//								disablePromptEntry = false
+//								stopAnimation()
+//							}
+//							.buttonStyle(.bordered)
+//						}
+//					}
+//					.onAppear {
+//						startAnimation()
+//					}
+//					.onChange(of: chatViewManager.AIExplainItem) { _, _ in
+//						startAnimation()
+//					}
+//					.padding()
+//					.frame(maxWidth: geometry.size.width * 0.5, maxHeight: geometry.size.height * 0.8)
+//					.background(Color(NSColor.windowBackgroundColor))
+//					.foregroundColor(Color(NSColor.labelColor))
+//					.cornerRadius(8)
+//					.shadow(radius: 5)
+//				}
+//			}
+//			.onChange(of: disablePromptEntry) { _, newValue in
+//				isFocused = !newValue
+//			}
 		}
 	}
 	
@@ -147,15 +128,6 @@ struct ChatView: View {
 		return geometryWidth - sidebarWidth
 	}
 	
-	private func promptView(conversationItem: ConversationItem, geometry: GeometryProxy) -> some View {
-		PromptView(conversationItem: conversationItem,
-				   width: getWidth(geometryWidth: geometry.size.width),
-				   disablePromptEntry: $disablePromptEntry,
-				   chatViewManager: chatViewManager,
-				   removePrompt: removeConversationItem,
-				   highlightedText: $highlightedText)
-	}
-	
 	private var promptsSidebarView: some View {
 		VStack(alignment: .leading) {
 			Text("Prompts")
@@ -185,19 +157,41 @@ struct ChatView: View {
 			}
 		}
 	}
+	
+	private func removeConversationItem(_ id: String) {
+		withAnimation(.easeInOut(duration: 0.1)) {
+			chatViewManager.removeConversationItem(id)
+		}
+		if chatViewManager.conversationItems.isEmpty {
+			isFocused = true
+		 }
+	}
+}
 
-	private var promptInputView: some View {
+struct ContentHeightPreferenceKey: PreferenceKey {
+	static var defaultValue: CGFloat = 0
+	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+		value = max(value, nextValue())
+	}
+}
+
+struct PromptInputView: View {
+	@Bindable var chatViewManager: ChatViewManager
+	@FocusState var isFocused: Bool
+	var disablePromptEntry: Bool
+	
+	var body: some View {
 		HStack {
 			TextField("Enter your prompt", text: $chatViewManager.prompt)
 				.textFieldStyle(RoundedBorderTextFieldStyle())
 				.onSubmit {
 					if !chatViewManager.prompt.isEmpty {
-						sendPrompt()
+						chatViewManager.sendPrompt()
 					}
 				}
 				.focused($isFocused)
 			
-			Button(action: sendPrompt) {
+			Button(action: { chatViewManager.sendPrompt() }) {
 				Text("Send")
 					.padding(.horizontal)
 					.padding(.vertical, 8)
@@ -216,16 +210,64 @@ struct ChatView: View {
 			}
 		}
 	}
+}
+
+struct ConversationsScrollView: View {
+	@State var chatViewManager = ChatViewManager()
+	@State var disablePromptEntry: Bool
+	@Binding var highlightedText: String
+	@Binding var scrollViewProxy: ScrollViewProxy?
+	@FocusState var isFocused: Bool
+	var width: CGFloat
+	var isThreadView: Bool
 	
-	private func sendPrompt() {
-//		guard chatViewManager.chats.count < Chat.cards.count else { return }
-//		var newPrompt = Chat.cards[chatViewManager.chats.count]
-//		newPrompt.setPrompt(prompt)
-//		
-//		withAnimation(.easeInOut(duration: 0.5)) {
-//			addNewPrompt(newPrompt)
-//		}
-		chatViewManager.sendPrompt()
+	var body: some View {
+		VStack(alignment: .leading, spacing: 0) {
+			if chatViewManager.conversationItems.isEmpty {
+				PromptInputView(chatViewManager: chatViewManager, 
+								isFocused: _isFocused,
+								disablePromptEntry: disablePromptEntry)
+					.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+			} else {
+				ScrollViewReader { scrollProxy in
+					ScrollView {
+						LazyVStack(alignment: .leading, spacing: 8) {
+							ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
+								PromptView(conversationItem: conversationItem,
+										   width: width,
+										   disablePromptEntry: $disablePromptEntry,
+										   chatViewManager: chatViewManager,
+										   removePrompt: removeConversationItem,
+										   highlightedText: $highlightedText,
+										   isThreadView: isThreadView)
+									.id(conversationItem.id)
+							}
+	//							.background(.blue)
+						}
+						.padding()
+						.background(
+							Group {
+								if scrollViewProxy != nil {
+									GeometryReader { contentGeometry in
+										Color.clear.preference(key: ContentHeightPreferenceKey.self, value: contentGeometry.size.height)
+									}
+								}
+							}
+						)
+						
+					}
+					.onAppear {
+						scrollViewProxy = scrollProxy
+					}
+				}
+				PromptInputView(chatViewManager: chatViewManager, 
+								isFocused: _isFocused,
+								disablePromptEntry: disablePromptEntry)
+			}
+		}
+		.onChange(of: disablePromptEntry) { _, newValue in
+			isFocused = !newValue
+		}
 	}
 	
 	private func removeConversationItem(_ id: String) {
@@ -235,12 +277,6 @@ struct ChatView: View {
 		if chatViewManager.conversationItems.isEmpty {
 			isFocused = true
 		 }
-	}
-}
-struct ContentHeightPreferenceKey: PreferenceKey {
-	static var defaultValue: CGFloat = 0
-	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-		value = max(value, nextValue())
 	}
 }
 

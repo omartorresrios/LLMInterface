@@ -206,6 +206,7 @@ struct PromptView: View {
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
 	@Binding var highlightedText: String
+	var isThreadView: Bool
 	@State private var textView: NSTextView?
 	@State private var textEditorHeight: CGFloat = 0
 	@State private var resizableLeftWidth: CGFloat
@@ -219,18 +220,20 @@ struct PromptView: View {
 		 disablePromptEntry: Binding<Bool>,
 		 chatViewManager: ChatViewManager,
 		 removePrompt: @escaping (String) -> Void,
-		 highlightedText: Binding<String>) {
+		 highlightedText: Binding<String>,
+		 isThreadView: Bool) {
 		self.conversationItem = conversationItem
 		self.width = width
 		_disablePromptEntry = disablePromptEntry
 		self.chatViewManager = chatViewManager
 		self.removePrompt = removePrompt
 		_highlightedText = highlightedText
+		self.isThreadView = isThreadView
 		_resizableLeftWidth = State(initialValue: width)
 	}
 	
 	var body: some View {
-		HStack {
+		HStack(alignment: .top) {
 			ZStack {
 				VStack(alignment: .leading) {
 					topButtonsView
@@ -274,8 +277,8 @@ struct PromptView: View {
 						DragGesture()
 							.onChanged { value in
 								let newWidth = resizableLeftWidth + value.translation.width
-								let maxLeftWidth = width * 0.9 // Left view must leave room for right view
-								let minLeftWidth = width * 0.1 // Left view must have a minimum width
+								let maxLeftWidth = width * 0.7 // Left view must leave room for right view
+								let minLeftWidth = width * 0.3 // Left view must have a minimum width
 								resizableLeftWidth = min(max(newWidth, minLeftWidth), maxLeftWidth)
 							}
 					)
@@ -285,14 +288,19 @@ struct PromptView: View {
 					} label: {
 						Image(systemName: "arrow.right")
 					}
-					Text("This is just a test of the pop up view.")
+					ConversationsScrollView(disablePromptEntry: disablePromptEntry,
+											highlightedText: $highlightedText,
+											scrollViewProxy: .constant(nil),
+											width: rightWidth,
+											isThreadView: true)
 				}
 				.frame(width: rightWidth)
+				.background(.pink)
 			}
 		}
 		.onChange(of: promptViewManager.showThreadView) { _, newValue in
 			if newValue {
-				resizableLeftWidth = min(width * 0.7, width * 0.9) // Clamp to a max of 90%
+				resizableLeftWidth = min(width * 0.7, width * 0.8) // Clamp to a max of 90%
 			} else {
 				resizableLeftWidth = width // Full width when thread view is hidden
 			}
@@ -304,25 +312,27 @@ struct PromptView: View {
 			Text(conversationItem.prompt)
 				.font(.custom("HelveticaNeue", size: 18))
 				.bold()
-			Button(action: {
-				promptViewManager.toggleThreadView()
-			}) {
-				Image(systemName: "arrow.triangle.branch")
-					.foregroundColor(.red)
-			}
-			.disabled(promptViewManager.showThreadView)
-			Button {
-				removePrompt(conversationItem.id)
-				if let textView = textView {
-					chatViewManager.unregister(textView)
+			if !isThreadView {
+				Button(action: {
+					promptViewManager.toggleThreadView()
+				}) {
+					Image(systemName: "arrow.triangle.branch")
+						.foregroundColor(.red)
 				}
-				// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
-				if chatViewManager.showAIExplanationView {
-					chatViewManager.showAIExplanationView.toggle()
+				.disabled(promptViewManager.showThreadView)
+				Button {
+					removePrompt(conversationItem.id)
+					if let textView = textView {
+						chatViewManager.unregister(textView)
+					}
+					// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
+					if chatViewManager.showAIExplanationView {
+						chatViewManager.showAIExplanationView.toggle()
+					}
+				} label: {
+					Image(systemName: "trash")
+						.foregroundColor(.red)
 				}
-			} label: {
-				Image(systemName: "trash")
-					.foregroundColor(.red)
 			}
 			if hasMoreThanTwoLines && !isAnimating {
 				Button {
@@ -446,5 +456,6 @@ struct PromptView: View {
 			   disablePromptEntry: .constant(false),
 			   chatViewManager: ChatViewManager(),
 			   removePrompt: { _ in },
-			   highlightedText: .constant(""))
+			   highlightedText: .constant(""), 
+			   isThreadView: false)
 }
