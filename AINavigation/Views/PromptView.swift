@@ -258,7 +258,7 @@ struct PromptView: View {
 														 font: font) > 20
 					}
 				}
-				.frame(maxWidth: resizableLeftWidth)
+				.frame(maxWidth: resizableLeftWidth, alignment: .leading)
 				.onChange(of: promptViewManager.highlightedText) { _, newValue in
 					highlightedText = newValue
 				}
