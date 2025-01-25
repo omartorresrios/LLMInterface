@@ -298,13 +298,13 @@ struct ConversationsScrollView: View {
 					ScrollView {
 						LazyVStack(alignment: .leading, spacing: 8) {
 							ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
-								PromptView(conversationItem: conversationItem,
-										   disablePromptEntry: $disablePromptEntry,
-										   chatViewManager: chatViewManager,
-										   removePrompt: removeConversationItem,
+								PromptView(chatViewManager: chatViewManager,
 										   highlightedText: $highlightedText,
+										   disablePromptEntry: $disablePromptEntry,
+										   conversationItem: conversationItem,
 										   isThreadView: isThreadView,
-										   side: side)
+										   side: side,
+										   removePrompt: removeConversationItem)
 									.id(conversationItem.id)
 							}
 	//							.background(.blue)

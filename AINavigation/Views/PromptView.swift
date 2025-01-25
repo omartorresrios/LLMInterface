@@ -194,37 +194,37 @@ struct TextEditor: NSViewRepresentable {
 }
 
 struct PromptView: View {
-	let conversationItem: ConversationItem
-	@Binding var disablePromptEntry: Bool
+	@Environment(\.customWidths) private var widths: [ViewSide: CGFloat]
 	@State var promptViewManager = PromptViewManager()
 	@Bindable var chatViewManager: ChatViewManager
+	@Binding var highlightedText: String
+	@Binding var disablePromptEntry: Bool
 	@State private var hasMoreThanTwoLines = false
-	var removePrompt: (String) -> Void
 	@State private var displayedText = ""
 	@State private var isAnimating = false
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
-	@Binding var highlightedText: String
-	var isThreadView: Bool
 	@State private var textView: NSTextView?
 	@State private var textEditorHeight: CGFloat = 0
-	@Environment(\.customWidths) private var widths: [ViewSide: CGFloat]
+	let conversationItem: ConversationItem
+	var isThreadView: Bool
 	var side: ViewSide
+	var removePrompt: (String) -> Void
 	
-	init(conversationItem: ConversationItem,
-		 disablePromptEntry: Binding<Bool>,
-		 chatViewManager: ChatViewManager,
-		 removePrompt: @escaping (String) -> Void,
+	init(chatViewManager: ChatViewManager,
 		 highlightedText: Binding<String>,
+		 disablePromptEntry: Binding<Bool>,
+		 conversationItem: ConversationItem,
 		 isThreadView: Bool,
-		 side: ViewSide) {
-		self.conversationItem = conversationItem
-		_disablePromptEntry = disablePromptEntry
+		 side: ViewSide,
+		 removePrompt: @escaping (String) -> Void) {
 		self.chatViewManager = chatViewManager
-		self.removePrompt = removePrompt
 		_highlightedText = highlightedText
+		_disablePromptEntry = disablePromptEntry
+		self.conversationItem = conversationItem
 		self.isThreadView = isThreadView
 		self.side = side
+		self.removePrompt = removePrompt
 	}
 	
 	var body: some View {
@@ -410,11 +410,11 @@ struct PromptView: View {
 }
 
 #Preview {
-	PromptView(conversationItem: ConversationItem.cards.first!,
+	PromptView(chatViewManager: ChatViewManager(),
+			   highlightedText: .constant(""),
 			   disablePromptEntry: .constant(false),
-			   chatViewManager: ChatViewManager(),
-			   removePrompt: { _ in },
-			   highlightedText: .constant(""), 
+			   conversationItem: ConversationItem.cards.first!,
 			   isThreadView: false,
-			   side: .left)
+			   side: .left,
+			   removePrompt: { _ in })
 }
