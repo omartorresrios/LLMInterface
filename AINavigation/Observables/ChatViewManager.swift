@@ -19,6 +19,7 @@ final class ChatViewManager: Identifiable {
 	var selectedPromptIndex: Int?
 	var showSidebar = false
 	var showAIExplanationView = false
+	var showThreadView = false
 	var currentSelectedConversationItemId: String?
 	var AIExplainItem = ConversationItem()
 	var textViews: [NSTextView] = []
@@ -108,6 +109,10 @@ final class ChatViewManager: Identifiable {
 				print("Error parsing JSON: \(error)")
 			}
 		}.resume()
+	}
+	
+	func toggleThreadView() {
+		showThreadView.toggle()
 	}
 	
 	func resetAIExplainItem() {

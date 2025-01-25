@@ -195,7 +195,6 @@ struct TextEditor: NSViewRepresentable {
 
 struct PromptView: View {
 	let conversationItem: ConversationItem
-	let width: CGFloat
 	@Binding var disablePromptEntry: Bool
 	@State var promptViewManager = PromptViewManager()
 	@Bindable var chatViewManager: ChatViewManager
@@ -209,27 +208,23 @@ struct PromptView: View {
 	var isThreadView: Bool
 	@State private var textView: NSTextView?
 	@State private var textEditorHeight: CGFloat = 0
-	@State private var resizableLeftWidth: CGFloat
-
-	private var rightWidth: CGFloat {
-		promptViewManager.showThreadView ? (max(0, width - resizableLeftWidth - 4)) : 0
-	}
+	@Environment(\.customWidths) private var widths: [ViewSide: CGFloat]
+	var side: ViewSide
 	
 	init(conversationItem: ConversationItem,
-		 width: CGFloat,
 		 disablePromptEntry: Binding<Bool>,
 		 chatViewManager: ChatViewManager,
 		 removePrompt: @escaping (String) -> Void,
 		 highlightedText: Binding<String>,
-		 isThreadView: Bool) {
+		 isThreadView: Bool,
+		 side: ViewSide) {
 		self.conversationItem = conversationItem
-		self.width = width
 		_disablePromptEntry = disablePromptEntry
 		self.chatViewManager = chatViewManager
 		self.removePrompt = removePrompt
 		_highlightedText = highlightedText
 		self.isThreadView = isThreadView
-		_resizableLeftWidth = State(initialValue: width)
+		self.side = side
 	}
 	
 	var body: some View {
@@ -254,11 +249,11 @@ struct PromptView: View {
 					startAnimation()
 					if let font  = NSFont(name: "Helvetica Neue", size: 16) {
 						hasMoreThanTwoLines = countLines(in: newValue,
-														 width: width - 40,
+														 width: (widths[side] ?? 0.0) - 40,
 														 font: font) > 20
 					}
 				}
-				.frame(maxWidth: resizableLeftWidth, alignment: .leading)
+				.background(.pink)
 				.onChange(of: promptViewManager.highlightedText) { _, newValue in
 					highlightedText = newValue
 				}
@@ -267,42 +262,6 @@ struct PromptView: View {
 					chatViewManager.currentSelectedConversationItemId == conversationItem.id {
 					AIExplainButton
 				}
-			}
-			
-			if promptViewManager.showThreadView {
-				DividerView()
-					.frame(width: 4)
-					.background(Color.gray)
-					.gesture(
-						DragGesture()
-							.onChanged { value in
-								let newWidth = resizableLeftWidth + value.translation.width
-								let maxLeftWidth = width * 0.7 // Left view must leave room for right view
-								let minLeftWidth = width * 0.3 // Left view must have a minimum width
-								resizableLeftWidth = min(max(newWidth, minLeftWidth), maxLeftWidth)
-							}
-					)
-				VStack {
-					Button {
-						promptViewManager.toggleThreadView()
-					} label: {
-						Image(systemName: "arrow.right")
-					}
-					ConversationsScrollView(disablePromptEntry: disablePromptEntry,
-											highlightedText: $highlightedText,
-											scrollViewProxy: .constant(nil),
-											width: rightWidth,
-											isThreadView: true)
-				}
-				.frame(width: rightWidth)
-				.background(.pink)
-			}
-		}
-		.onChange(of: promptViewManager.showThreadView) { _, newValue in
-			if newValue {
-				resizableLeftWidth = min(width * 0.7, width * 0.8) // Clamp to a max of 90%
-			} else {
-				resizableLeftWidth = width // Full width when thread view is hidden
 			}
 		}
 	}
@@ -314,12 +273,12 @@ struct PromptView: View {
 				.bold()
 			if !isThreadView {
 				Button(action: {
-					promptViewManager.toggleThreadView()
+					chatViewManager.toggleThreadView()
 				}) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(.red)
 				}
-				.disabled(promptViewManager.showThreadView)
+				.disabled(chatViewManager.showThreadView)
 				Button {
 					removePrompt(conversationItem.id)
 					if let textView = textView {
@@ -353,7 +312,7 @@ struct PromptView: View {
 					   promptViewManager: promptViewManager,
 					   conversationItem: conversationItem,
 					   text: displayedText,
-					   width: width - 64,
+					   width: (widths[side] ?? 0.0) - 64,
 					   height: $textEditorHeight,
 					   textView: $textView)
 			.frame(height: textEditorHeight)
@@ -383,7 +342,7 @@ struct PromptView: View {
 			}
 			.foregroundColor(.white)
 			Button("Open thread") {
-				promptViewManager.toggleThreadView()
+				chatViewManager.toggleThreadView()
 				promptViewManager.setAIExplainButton(false)
 			}
 			.foregroundColor(.white)
@@ -451,11 +410,11 @@ struct PromptView: View {
 }
 
 #Preview {
-	PromptView(conversationItem: ConversationItem.cards.first!, 
-			   width: 600,
+	PromptView(conversationItem: ConversationItem.cards.first!,
 			   disablePromptEntry: .constant(false),
 			   chatViewManager: ChatViewManager(),
 			   removePrompt: { _ in },
 			   highlightedText: .constant(""), 
-			   isThreadView: false)
+			   isThreadView: false,
+			   side: .left)
 }

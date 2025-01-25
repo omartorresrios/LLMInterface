@@ -18,33 +18,82 @@ struct ChatView: View {
 	@State private var isAnimating = false//To-do We are not using it currently. See if we can use for some validation
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
+	@State private var leftViewWidth: CGFloat = 0
+	@State private var totalWidth: CGFloat = 0
+	@State private var rightViewWidth: CGFloat = 0
 	
 	var body: some View {
 		GeometryReader { geometry in
 //			ZStack {
 				HStack(alignment: .top, spacing: 0) {
+					// THIS SIDEBAR COULD BE SHOWN ON TOP OF THE HSTACK
 //					if chatViewManager.showSidebar {
 //						promptsSidebarView
 //							.frame(width: geometry.size.width * 0.2)
 //					}
 						ConversationsScrollView(chatViewManager: chatViewManager,
-												disablePromptEntry: disablePromptEntry,
+												disablePromptEntry: $disablePromptEntry,
 												highlightedText: $highlightedText,
 												scrollViewProxy: $scrollViewProxy,
-												width: getWidth(geometryWidth: geometry.size.width),
-												isThreadView: false)
+												isThreadView: false,
+												side: .left)
+						.frame(width: leftViewWidth)
 						.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
 							chatViewManager.showSidebar = height > geometry.size.height
 						}
+						.environment(\.customWidths, [.left: leftViewWidth])
 //					}
-					.frame(width: getWidth(geometryWidth: geometry.size.width))
+					
 					.onChange(of: chatViewManager.conversationItems.count) { _, _ in
 						if let scrollViewProxy = scrollViewProxy {
 							scrollToBottom(proxy: scrollViewProxy)
 						}
 					}
+					if chatViewManager.showThreadView {
+						DividerView()
+							.frame(width: 4)
+							.background(Color.gray)
+							.gesture(
+								DragGesture()
+									.onChanged { value in
+										let translation = value.translation.width
+										let totalWidth = geometry.size.width
+										
+										// Adjust left and right view widths proportionally
+										let newLeftWidth = leftViewWidth + translation
+										let newRightWidth = rightViewWidth - translation
+										
+										// Set minimum and maximum constraints
+										let minWidth = totalWidth * 0.3
+										let maxWidth = totalWidth * 0.7
+										
+										// Ensure views stay within constraints
+										if newLeftWidth >= minWidth && newLeftWidth <= maxWidth &&
+										   newRightWidth >= minWidth && newRightWidth <= maxWidth {
+											leftViewWidth = newLeftWidth
+											rightViewWidth = newRightWidth
+										}
+									}
+							)
+						ThreadView(chatViewManager: chatViewManager)
+							.frame(width: rightViewWidth)
+							.environment(\.customWidths, [.right: rightViewWidth])
+					}
 				}
-				
+				.background(.green.opacity(0.5))
+				.onAppear {
+					DispatchQueue.main.async {
+						totalWidth = geometry.size.width
+						leftViewWidth = getConversationsScrollViewWidth(with: totalWidth,
+																		showThreadView: chatViewManager.showThreadView)
+						rightViewWidth = getThreadViewConversationsScrollViewWidth(with: totalWidth)
+					}
+				}
+				.onChange(of: chatViewManager.showThreadView) { _, newValue in
+					leftViewWidth = getConversationsScrollViewWidth(with: totalWidth,
+																	showThreadView: newValue)
+					rightViewWidth = getThreadViewConversationsScrollViewWidth(with: totalWidth)
+				}
 //				if chatViewManager.showAIExplanationView {
 //					Color.black.opacity(0.3)
 //						.edgesIgnoringSafeArea(.all)
@@ -80,11 +129,18 @@ struct ChatView: View {
 //					.cornerRadius(8)
 //					.shadow(radius: 5)
 //				}
-//			}
-//			.onChange(of: disablePromptEntry) { _, newValue in
-//				isFocused = !newValue
-//			}
 		}
+	}
+	
+	private func getConversationsScrollViewWidth(with geometryWidth: CGFloat, showThreadView: Bool) -> CGFloat {
+		let sidebarWidth = chatViewManager.showSidebar ? geometryWidth * 0.2 : 0
+		let threadViewWidth = showThreadView ? geometryWidth * 0.3 : 0
+		return geometryWidth - sidebarWidth - threadViewWidth
+	}
+	
+	private func getThreadViewConversationsScrollViewWidth(with geometryWidth: CGFloat) -> CGFloat {
+		let conversationsScrollViewWidth = geometryWidth * 0.7
+		return geometryWidth - conversationsScrollViewWidth
 	}
 	
 	private func startAnimation() {
@@ -121,11 +177,6 @@ struct ChatView: View {
 				}
 			}
 		}
-	}
-	
-	private func getWidth(geometryWidth: CGFloat) -> CGFloat {
-		let sidebarWidth = chatViewManager.showSidebar ? geometryWidth * 0.2 : 0
-		return geometryWidth - sidebarWidth
 	}
 	
 	private var promptsSidebarView: some View {
@@ -213,13 +264,27 @@ struct PromptInputView: View {
 }
 
 struct ConversationsScrollView: View {
-	@State var chatViewManager = ChatViewManager()
-	@State var disablePromptEntry: Bool
+	@Bindable var chatViewManager: ChatViewManager
+	@Binding var disablePromptEntry: Bool
 	@Binding var highlightedText: String
 	@Binding var scrollViewProxy: ScrollViewProxy?
 	@FocusState var isFocused: Bool
-	var width: CGFloat
 	var isThreadView: Bool
+	let side: ViewSide
+	
+	init(chatViewManager: ChatViewManager = ChatViewManager(),
+		 disablePromptEntry: Binding<Bool>,
+		 highlightedText: Binding<String>,
+		 scrollViewProxy: Binding<ScrollViewProxy?>,
+		 isThreadView: Bool,
+		 side: ViewSide) {
+		self.chatViewManager = chatViewManager
+		_disablePromptEntry = disablePromptEntry
+		_highlightedText = highlightedText
+		_scrollViewProxy = scrollViewProxy
+		self.isThreadView = isThreadView
+		self.side = side
+	}
 	
 	var body: some View {
 		VStack(alignment: .leading, spacing: 0) {
@@ -234,12 +299,12 @@ struct ConversationsScrollView: View {
 						LazyVStack(alignment: .leading, spacing: 8) {
 							ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
 								PromptView(conversationItem: conversationItem,
-										   width: width,
 										   disablePromptEntry: $disablePromptEntry,
 										   chatViewManager: chatViewManager,
 										   removePrompt: removeConversationItem,
 										   highlightedText: $highlightedText,
-										   isThreadView: isThreadView)
+										   isThreadView: isThreadView,
+										   side: side)
 									.id(conversationItem.id)
 							}
 	//							.background(.blue)
@@ -249,12 +314,12 @@ struct ConversationsScrollView: View {
 							Group {
 								if scrollViewProxy != nil {
 									GeometryReader { contentGeometry in
-										Color.clear.preference(key: ContentHeightPreferenceKey.self, value: contentGeometry.size.height)
+										Color.clear.preference(key: ContentHeightPreferenceKey.self, 
+															   value: contentGeometry.size.height)
 									}
 								}
 							}
 						)
-						
 					}
 					.onAppear {
 						scrollViewProxy = scrollProxy
