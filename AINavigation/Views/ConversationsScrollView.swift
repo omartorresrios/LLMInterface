@@ -34,7 +34,8 @@ struct ConversationsScrollView: View {
 				PromptInputView(chatViewManager: chatViewManager,
 								isFocused: _isFocused,
 								disablePromptEntry: disablePromptEntry)
-					.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+				.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: side == .left ? .center : .bottom)
+				.padding(side == .left ? 16 : 0)
 			} else {
 				ScrollViewReader { scrollProxy in
 					ScrollView {

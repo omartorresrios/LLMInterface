@@ -35,7 +35,6 @@ struct PromptInputView: View {
 			.disabled(chatViewManager.prompt.isEmpty)
 		}
 		.disabled(disablePromptEntry)
-		.padding(.horizontal, chatViewManager.conversationItems.count > 0 ? 0 : 16)
 		.onAppear {
 			DispatchQueue.main.async {
 				isFocused = true
