@@ -1,5 +1,5 @@
 //
-//  PromptView.swift
+//  ConversationItemView.swift
 //  AINavigation
 //
 //  Created by Omar Torres on 11/22/24.
@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TextEditor: NSViewRepresentable {
 	var chatViewManager: ChatViewManager
-	var promptViewManager: PromptViewManager
+	var conversationItemViewManager: ConversationItemViewManager
 	let conversationItem: ConversationItem
 	let text: String
 	var width: CGFloat
@@ -34,7 +34,7 @@ struct TextEditor: NSViewRepresentable {
 			if selectedRange.length > 0 {
 				let selectedText = (textView.string as NSString).substring(with: selectedRange).trimmingCharacters(in: .whitespacesAndNewlines)
 				guard !selectedText.isEmpty else {
-					parent.promptViewManager.setAIExplainButton(false)
+					parent.conversationItemViewManager.setAIExplainButton(false)
 					return
 				}
 				
@@ -50,9 +50,9 @@ struct TextEditor: NSViewRepresentable {
 						parent.chatViewManager.currentSelectedConversationItemId = parent.conversationItem.id
 					}
 					DispatchQueue.main.async { [weak self] in
-						self?.parent.promptViewManager.highlightedText = selectedText
-						self?.parent.promptViewManager.setAIExplainButton(true)
-						self?.parent.promptViewManager.buttonPosition = CGPoint(
+						self?.parent.conversationItemViewManager.highlightedText = selectedText
+						self?.parent.conversationItemViewManager.setAIExplainButton(true)
+						self?.parent.conversationItemViewManager.buttonPosition = CGPoint(
 							x: containerOrigin.x + boundingRect.maxX,
 							y: containerOrigin.y + boundingRect.minY
 						)
@@ -60,8 +60,8 @@ struct TextEditor: NSViewRepresentable {
 				}
 			} else {
 				DispatchQueue.main.async { [weak self] in
-					self?.parent.promptViewManager.highlightedText = ""
-					self?.parent.promptViewManager.setAIExplainButton(false)
+					self?.parent.conversationItemViewManager.highlightedText = ""
+					self?.parent.conversationItemViewManager.setAIExplainButton(false)
 				}
 			}
 		}
@@ -109,7 +109,7 @@ struct TextEditor: NSViewRepresentable {
 		
 		let totalHeight = textView.layoutManager?.usedRect(for: textView.textContainer!).height ?? 0
 		let newHeight: CGFloat
-		if promptViewManager.isExpanded {
+		if conversationItemViewManager.isExpanded {
 			newHeight = totalHeight
 		} else {
 			newHeight = min(100, totalHeight)
@@ -193,9 +193,9 @@ struct TextEditor: NSViewRepresentable {
 	}
 }
 
-struct PromptView: View {
+struct ConversationItemView: View {
 	@Environment(\.customWidths) private var widths: [ViewSide: CGFloat]
-	@State var promptViewManager = PromptViewManager()
+	@State var conversationItemManager = ConversationItemViewManager()
 	@Bindable var chatViewManager: ChatViewManager
 	@Binding var highlightedText: String
 	@Binding var disablePromptEntry: Bool
@@ -258,11 +258,11 @@ struct PromptView: View {
 					}
 				}
 				.background(.pink)
-				.onChange(of: promptViewManager.highlightedText) { _, newValue in
+				.onChange(of: conversationItemManager.highlightedText) { _, newValue in
 					highlightedText = newValue
 				}
 				
-				if promptViewManager.showAIExplainButton &&
+				if conversationItemManager.showAIExplainButton &&
 					chatViewManager.currentSelectedConversationItemId == conversationItem.id {
 					AIExplainButton
 				}
@@ -305,9 +305,9 @@ struct PromptView: View {
 			}
 			if hasMoreThanTwoLines && !isAnimating {
 				Button {
-					promptViewManager.toggleIsExpanded()
+					conversationItemManager.toggleIsExpanded()
 				} label: {
-					Text(promptViewManager.isExpanded ? "Collapse" : "Show more")
+					Text(conversationItemManager.isExpanded ? "Collapse" : "Show more")
 						.font(.footnote)
 						.foregroundColor(.blue)
 				}
@@ -319,14 +319,14 @@ struct PromptView: View {
 	private var textEditorView: some View {
 		ZStack(alignment: .bottom) {
 			TextEditor(chatViewManager: chatViewManager,
-					   promptViewManager: promptViewManager,
+					   conversationItemViewManager: conversationItemManager,
 					   conversationItem: conversationItem,
 					   text: displayedText,
 					   width: (widths[side] ?? 0.0) - 64,
 					   height: $textEditorHeight,
 					   textView: $textView)
 			.frame(height: textEditorHeight)
-			if !promptViewManager.isExpanded {
+			if !conversationItemManager.isExpanded {
 				LinearGradient(
 					gradient: Gradient(colors: [
 						Color.gray.opacity(0),
@@ -338,21 +338,21 @@ struct PromptView: View {
 				.frame(height: 50) // Height of blur effect
 			}
 		}
-		.disabled(!promptViewManager.isExpanded)
+		.disabled(!conversationItemManager.isExpanded)
 	}
 	
 	private var AIExplainButton: some View {
 		VStack {
 			Button("Explain") {
-				promptViewManager.setAIExplainButton(false)
-				chatViewManager.prompt = promptViewManager.highlightedText
+				conversationItemManager.setAIExplainButton(false)
+				chatViewManager.prompt = conversationItemManager.highlightedText
 				chatViewManager.sendAIExplainPrompt()
 				chatViewManager.showAIExplanationView = true
 			}
 			.foregroundColor(.white)
 			Button("Open thread") {
 				chatViewManager.toggleThreadView()
-				promptViewManager.setAIExplainButton(false)
+				conversationItemManager.setAIExplainButton(false)
 			}
 			.foregroundColor(.white)
 			
@@ -361,7 +361,7 @@ struct PromptView: View {
 		.background(.red)
 		.cornerRadius(8)
 		.shadow(radius: 5)
-		.position(promptViewManager.buttonPosition)
+		.position(conversationItemManager.buttonPosition)
 		.onAppear {
 			startAnimation()
 		}
@@ -419,7 +419,7 @@ struct PromptView: View {
 }
 
 #Preview {
-	PromptView(chatViewManager: ChatViewManager(),
+	ConversationItemView(chatViewManager: ChatViewManager(),
 			   highlightedText: .constant(""),
 			   disablePromptEntry: .constant(false),
 			   conversationItem: ConversationItem.cards.first!,

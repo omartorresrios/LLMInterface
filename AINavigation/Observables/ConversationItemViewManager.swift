@@ -1,5 +1,5 @@
 //
-//  PromptViewManager.swift
+//  ConversationItemViewManager.swift
 //  AINavigation
 //
 //  Created by Omar Torres on 1/11/25.
@@ -9,7 +9,7 @@ import Observation
 import Foundation
 
 @Observable
-final class PromptViewManager {
+final class ConversationItemViewManager {
 	var isExpanded = true
 	var showAIExplainButton = false
 	var buttonPosition: CGPoint = .zero
