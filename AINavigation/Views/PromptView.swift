@@ -304,7 +304,9 @@ struct PromptView: View {
 				}
 			}
 		}
-		.disabled(chatViewManager.showAIExplanationView || conversationItem.outputStatus == .pending)
+		.disabled(chatViewManager.showAIExplanationView || 
+				  conversationItem.outputStatus == .pending ||
+				  isAnimating)
 	}
 	
 	private var textEditorView: some View {

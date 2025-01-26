@@ -17,7 +17,7 @@ struct ThreadView: View {
 	}
 	
 	var body: some View {
-		VStack {
+		VStack(alignment: .leading) {
 			Button {
 				chatViewManager.toggleThreadView()
 			} label: {
@@ -28,7 +28,10 @@ struct ThreadView: View {
 									scrollViewProxy: .constant(nil),
 									isThreadView: true,
 									side: .right)
+			.background(.blue.opacity(0.7))
 		}
+		.padding()
+		.background(.yellow.opacity(0.7))
 	}
 }
 
