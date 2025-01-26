@@ -24,31 +24,30 @@ struct ChatView: View {
 	
 	var body: some View {
 		GeometryReader { geometry in
-//			ZStack {
+			ZStack {
 				HStack(alignment: .top, spacing: 0) {
 					// THIS SIDEBAR COULD BE SHOWN ON TOP OF THE HSTACK
-//					if chatViewManager.showSidebar {
-//						promptsSidebarView
-//							.frame(width: geometry.size.width * 0.2)
-//					}
-						ConversationsScrollView(chatViewManager: chatViewManager,
-												disablePromptEntry: $disablePromptEntry,
-												highlightedText: $highlightedText,
-												scrollViewProxy: $scrollViewProxy,
-												isThreadView: false,
-												side: .left)
-						.frame(width: leftViewWidth)
-						.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-							chatViewManager.showSidebar = height > geometry.size.height
-						}
-						.environment(\.customWidths, [.left: leftViewWidth])
-//					}
-					
+					//					if chatViewManager.showSidebar {
+					//						promptsSidebarView
+					//							.frame(width: geometry.size.width * 0.2)
+					//					}
+					ConversationsScrollView(chatViewManager: chatViewManager,
+											disablePromptEntry: $disablePromptEntry,
+											highlightedText: $highlightedText,
+											scrollViewProxy: $scrollViewProxy,
+											isThreadView: false,
+											side: .left)
+					.frame(width: leftViewWidth)
+					.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
+						chatViewManager.showSidebar = height > geometry.size.height
+					}
+					.environment(\.customWidths, [.left: leftViewWidth])
 					.onChange(of: chatViewManager.conversationItems.count) { _, _ in
 						if let scrollViewProxy = scrollViewProxy {
 							scrollToBottom(proxy: scrollViewProxy)
 						}
 					}
+					
 					if chatViewManager.showThreadView {
 						DividerView()
 							.frame(width: 4)
@@ -69,7 +68,7 @@ struct ChatView: View {
 										
 										// Ensure views stay within constraints
 										if newLeftWidth >= minWidth && newLeftWidth <= maxWidth &&
-										   newRightWidth >= minWidth && newRightWidth <= maxWidth {
+											newRightWidth >= minWidth && newRightWidth <= maxWidth {
 											leftViewWidth = newLeftWidth
 											rightViewWidth = newRightWidth
 										}
@@ -94,41 +93,43 @@ struct ChatView: View {
 																	showThreadView: newValue)
 					rightViewWidth = getThreadViewConversationsScrollViewWidth(with: totalWidth)
 				}
-//				if chatViewManager.showAIExplanationView {
-//					Color.black.opacity(0.3)
-//						.edgesIgnoringSafeArea(.all)
-//					VStack {
-//						Text("Explaining -> \(highlightedText)")
-//						if chatViewManager.AIExplainItem.outputStatus == .pending {
-//							ProgressView()
-//						} else {
-//							ScrollView {
-//								Text(displayedText)
-//									.padding()
-//							}
-//							Button("Close") {
-//								chatViewManager.showAIExplanationView = false
-//								chatViewManager.resetAIExplainItem()
-//								displayedText = ""
-//								disablePromptEntry = false
-//								stopAnimation()
-//							}
-//							.buttonStyle(.bordered)
-//						}
-//					}
-//					.onAppear {
-//						startAnimation()
-//					}
-//					.onChange(of: chatViewManager.AIExplainItem) { _, _ in
-//						startAnimation()
-//					}
-//					.padding()
-//					.frame(maxWidth: geometry.size.width * 0.5, maxHeight: geometry.size.height * 0.8)
-//					.background(Color(NSColor.windowBackgroundColor))
-//					.foregroundColor(Color(NSColor.labelColor))
-//					.cornerRadius(8)
-//					.shadow(radius: 5)
-//				}
+				
+				if chatViewManager.showAIExplanationView {
+					Color.black.opacity(0.3)
+						.edgesIgnoringSafeArea(.all)
+					VStack {
+						Text("Explaining -> \(highlightedText)")
+						if chatViewManager.AIExplainItem.outputStatus == .pending {
+							ProgressView()
+						} else {
+							ScrollView {
+								Text(displayedText)
+									.padding()
+							}
+							Button("Close") {
+								chatViewManager.showAIExplanationView = false
+								chatViewManager.resetAIExplainItem()
+								displayedText = ""
+								disablePromptEntry = false
+								stopAnimation()
+							}
+							.buttonStyle(.bordered)
+						}
+					}
+					.onAppear {
+						startAnimation()
+					}
+					.onChange(of: chatViewManager.AIExplainItem) { _, _ in
+						startAnimation()
+					}
+					.padding()
+					.frame(maxWidth: geometry.size.width * 0.5, maxHeight: geometry.size.height * 0.8)
+					.background(Color(NSColor.windowBackgroundColor))
+					.foregroundColor(Color(NSColor.labelColor))
+					.cornerRadius(8)
+					.shadow(radius: 5)
+				}
+			}
 		}
 	}
 	

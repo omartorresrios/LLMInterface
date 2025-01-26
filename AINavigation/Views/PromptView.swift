@@ -240,6 +240,7 @@ struct PromptView: View {
 							.padding(.top, 8)
 					}
 				}
+				.frame(maxWidth: .infinity, alignment: .leading)
 				.padding()
 				.cornerRadius(8)
 				.onAppear {
