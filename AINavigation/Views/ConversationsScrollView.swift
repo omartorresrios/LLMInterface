@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ConversationsScrollView: View {
 	@Bindable var chatViewManager: ChatViewManager
-	@Binding var disablePromptEntry: Bool
+	@State var disablePromptEntry = false
 	@Binding var highlightedText: String
 	@Binding var scrollViewProxy: ScrollViewProxy?
 	@FocusState var isFocused: Bool
@@ -17,13 +17,11 @@ struct ConversationsScrollView: View {
 	let side: ViewSide
 	
 	init(chatViewManager: ChatViewManager = ChatViewManager(),
-		 disablePromptEntry: Binding<Bool>,
 		 highlightedText: Binding<String>,
 		 scrollViewProxy: Binding<ScrollViewProxy?>,
 		 isThreadView: Bool,
 		 side: ViewSide) {
 		self.chatViewManager = chatViewManager
-		_disablePromptEntry = disablePromptEntry
 		_highlightedText = highlightedText
 		_scrollViewProxy = scrollViewProxy
 		self.isThreadView = isThreadView
@@ -89,8 +87,7 @@ struct ConversationsScrollView: View {
 }
 
 #Preview {
-	ConversationsScrollView(disablePromptEntry: .constant(false),
-							highlightedText: .constant(""),
+	ConversationsScrollView(highlightedText: .constant(""),
 							scrollViewProxy: .constant(nil),
 							isThreadView: true,
 							side: .right)

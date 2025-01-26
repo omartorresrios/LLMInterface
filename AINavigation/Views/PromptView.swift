@@ -227,6 +227,12 @@ struct PromptView: View {
 		self.removePrompt = removePrompt
 	}
 	
+	private var disableWhileActions: Bool {
+		chatViewManager.showAIExplanationView ||
+		conversationItem.outputStatus == .pending ||
+		isAnimating
+	}
+	
 	var body: some View {
 		HStack(alignment: .top) {
 			ZStack {
@@ -243,9 +249,6 @@ struct PromptView: View {
 				.frame(maxWidth: .infinity, alignment: .leading)
 				.padding()
 				.cornerRadius(8)
-				.onAppear {
-					startAnimation()
-				}
 				.onChange(of: conversationItem.output) { oldValue, newValue in
 					startAnimation()
 					if let font  = NSFont(name: "Helvetica Neue", size: 16) {
@@ -264,6 +267,12 @@ struct PromptView: View {
 					AIExplainButton
 				}
 			}
+		}
+		.onAppear {
+			disablePromptEntry = disableWhileActions
+		}
+		.onChange(of: disableWhileActions) { _, newValue in
+			disablePromptEntry = newValue
 		}
 	}
 	
@@ -304,9 +313,7 @@ struct PromptView: View {
 				}
 			}
 		}
-		.disabled(chatViewManager.showAIExplanationView || 
-				  conversationItem.outputStatus == .pending ||
-				  isAnimating)
+		.disabled(disableWhileActions)
 	}
 	
 	private var textEditorView: some View {
@@ -341,7 +348,6 @@ struct PromptView: View {
 				chatViewManager.prompt = promptViewManager.highlightedText
 				chatViewManager.sendAIExplainPrompt()
 				chatViewManager.showAIExplanationView = true
-				disablePromptEntry = true
 			}
 			.foregroundColor(.white)
 			Button("Open thread") {
@@ -356,10 +362,12 @@ struct PromptView: View {
 		.cornerRadius(8)
 		.shadow(radius: 5)
 		.position(promptViewManager.buttonPosition)
+		.onAppear {
+			startAnimation()
+		}
 	}
 	
 	private func startAnimation() {
-		disablePromptEntry = true
 		guard !conversationItem.output.isEmpty,
 			  currentIndex == 0 else { return }
 		
@@ -368,7 +376,6 @@ struct PromptView: View {
 			guard currentIndex < conversationItem.output.count else {
 				timer.invalidate()
 				isAnimating = false
-				disablePromptEntry = false
 				return
 			}
 			
@@ -383,7 +390,6 @@ struct PromptView: View {
 		timer = nil
 		displayedText = conversationItem.output
 		isAnimating = false
-		disablePromptEntry = false
 	}
 	
 	private func countLines(in string: String, width: CGFloat, font: NSFont) -> Int {

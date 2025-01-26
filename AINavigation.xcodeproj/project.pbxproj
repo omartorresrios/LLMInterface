@@ -11,6 +11,7 @@
 		24538B282D0F20260099DB0E /* ChatViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B272D0F20260099DB0E /* ChatViewManager.swift */; };
 		24538B2A2D0F205B0099DB0E /* ChatsSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B292D0F205B0099DB0E /* ChatsSidebarView.swift */; };
 		245C17D82D4685520080B7DB /* ConversationsScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245C17D72D4685520080B7DB /* ConversationsScrollView.swift */; };
+		245C17DA2D46AA3C0080B7DB /* PromptInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245C17D92D46AA3C0080B7DB /* PromptInputView.swift */; };
 		246454FB2D15D44300004262 /* EditChatNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246454FA2D15D44300004262 /* EditChatNameView.swift */; };
 		24766F422D425F3900D72CF8 /* DividerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24766F412D425F3900D72CF8 /* DividerView.swift */; };
 		24766F442D45552200D72CF8 /* ThreadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24766F432D45552200D72CF8 /* ThreadView.swift */; };
@@ -51,6 +52,7 @@
 		24538B272D0F20260099DB0E /* ChatViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewManager.swift; sourceTree = "<group>"; };
 		24538B292D0F205B0099DB0E /* ChatsSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsSidebarView.swift; sourceTree = "<group>"; };
 		245C17D72D4685520080B7DB /* ConversationsScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsScrollView.swift; sourceTree = "<group>"; };
+		245C17D92D46AA3C0080B7DB /* PromptInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptInputView.swift; sourceTree = "<group>"; };
 		246454FA2D15D44300004262 /* EditChatNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditChatNameView.swift; sourceTree = "<group>"; };
 		24766F412D425F3900D72CF8 /* DividerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DividerView.swift; sourceTree = "<group>"; };
 		24766F432D45552200D72CF8 /* ThreadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadView.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				24766F412D425F3900D72CF8 /* DividerView.swift */,
 				24766F432D45552200D72CF8 /* ThreadView.swift */,
 				245C17D72D4685520080B7DB /* ConversationsScrollView.swift */,
+				245C17D92D46AA3C0080B7DB /* PromptInputView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -325,6 +328,7 @@
 				24766F422D425F3900D72CF8 /* DividerView.swift in Sources */,
 				246454FB2D15D44300004262 /* EditChatNameView.swift in Sources */,
 				24538B252D0F1E7A0099DB0E /* ChatContainersManager.swift in Sources */,
+				245C17DA2D46AA3C0080B7DB /* PromptInputView.swift in Sources */,
 				249CFDCC2CF0CD3200C09CAA /* ChatContainersView.swift in Sources */,
 				249CFDD72CF0D37D00C09CAA /* PromptView.swift in Sources */,
 				249CFDD52CF0D31000C09CAA /* ConversationItem.swift in Sources */,

@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct ThreadView: View {
-	@State private var disablePromptEntry = false // We might not need this
 	@State var highlightedText = ""
 	@Bindable var chatViewManager: ChatViewManager
 	
@@ -23,8 +22,7 @@ struct ThreadView: View {
 			} label: {
 				Image(systemName: "arrow.right")
 			}
-			ConversationsScrollView(disablePromptEntry: $disablePromptEntry,
-									highlightedText: $highlightedText,
+			ConversationsScrollView(highlightedText: $highlightedText,
 									scrollViewProxy: .constant(nil),
 									isThreadView: true,
 									side: .right)

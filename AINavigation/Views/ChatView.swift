@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ChatView: View {
 	@Binding var chatViewManager: ChatViewManager
-	@State private var disablePromptEntry = false
 	@State private var scrollViewProxy: ScrollViewProxy?
 	@FocusState private var isFocused: Bool
 	var addNewPrompt: (ConversationItem) -> Void
@@ -32,7 +31,6 @@ struct ChatView: View {
 					//							.frame(width: geometry.size.width * 0.2)
 					//					}
 					ConversationsScrollView(chatViewManager: chatViewManager,
-											disablePromptEntry: $disablePromptEntry,
 											highlightedText: $highlightedText,
 											scrollViewProxy: $scrollViewProxy,
 											isThreadView: false,
@@ -110,7 +108,6 @@ struct ChatView: View {
 								chatViewManager.showAIExplanationView = false
 								chatViewManager.resetAIExplainItem()
 								displayedText = ""
-								disablePromptEntry = false
 								stopAnimation()
 							}
 							.buttonStyle(.bordered)
@@ -146,13 +143,11 @@ struct ChatView: View {
 	
 	private func startAnimation() {
 		guard currentIndex == 0 else { return }
-		disablePromptEntry = true
 		isAnimating = true
 		timer = Timer.scheduledTimer(withTimeInterval: 0.005, repeats: true) { timer in
 			guard currentIndex < chatViewManager.AIExplainItem.output.count else {
 				timer.invalidate()
 				isAnimating = false
-				disablePromptEntry = false
 				currentIndex = 0
 				return
 			}
@@ -217,50 +212,6 @@ struct ChatView: View {
 		if chatViewManager.conversationItems.isEmpty {
 			isFocused = true
 		 }
-	}
-}
-
-struct ContentHeightPreferenceKey: PreferenceKey {
-	static var defaultValue: CGFloat = 0
-	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-		value = max(value, nextValue())
-	}
-}
-
-struct PromptInputView: View {
-	@Bindable var chatViewManager: ChatViewManager
-	@FocusState var isFocused: Bool
-	var disablePromptEntry: Bool
-	
-	var body: some View {
-		HStack {
-			TextField("Enter your prompt", text: $chatViewManager.prompt)
-				.textFieldStyle(RoundedBorderTextFieldStyle())
-				.onSubmit {
-					if !chatViewManager.prompt.isEmpty {
-						chatViewManager.sendPrompt()
-					}
-				}
-				.focused($isFocused)
-			
-			Button(action: { chatViewManager.sendPrompt() }) {
-				Text("Send")
-					.padding(.horizontal)
-					.padding(.vertical, 8)
-					.background(Color.blue)
-					.foregroundColor(.white)
-					.cornerRadius(8)
-			}
-			.buttonStyle(.plain)
-			.disabled(chatViewManager.prompt.isEmpty)
-		}
-		.disabled(disablePromptEntry)
-		.padding(.horizontal, chatViewManager.conversationItems.count > 0 ? 0 : 16)
-		.onAppear {
-			DispatchQueue.main.async {
-				isFocused = true
-			}
-		}
 	}
 }
 
