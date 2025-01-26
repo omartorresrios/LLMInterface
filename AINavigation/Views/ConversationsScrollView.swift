@@ -69,6 +69,7 @@ struct ConversationsScrollView: View {
 				PromptInputView(chatViewManager: chatViewManager,
 								isFocused: _isFocused,
 								disablePromptEntry: disablePromptEntry)
+				.padding(side == .left ? 16 : 0)
 			}
 		}
 		.onChange(of: disablePromptEntry) { _, newValue in

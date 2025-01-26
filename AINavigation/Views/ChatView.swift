@@ -35,7 +35,7 @@ struct ChatView: View {
 											scrollViewProxy: $scrollViewProxy,
 											isThreadView: false,
 											side: .left)
-					.frame(width: leftViewWidth)
+					.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
 					.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
 						chatViewManager.showSidebar = height > geometry.size.height
 					}

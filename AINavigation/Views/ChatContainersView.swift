@@ -44,9 +44,10 @@ struct ChatContainersView: View {
 					Divider()
 					if let chatViewManager = chatContainersManager.getSelectedChat() {
 						ChatView(chatViewManager: chatViewManager,
-								 addNewPrompt: { newChat in addNewPrompt(with: newChat, to: chatViewManager.wrappedValue) })
+								 addNewPrompt: { newChat in
+							addNewPrompt(with: newChat, to: chatViewManager.wrappedValue)
+						})
 						.searchable(text: chatViewManager.searchText, prompt: "Search in chat history")
-							.frame(maxWidth: .infinity)
 					}
 				}
 				.background(Color(hex: "F9F2E2"))
