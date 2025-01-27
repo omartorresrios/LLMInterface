@@ -195,7 +195,7 @@ struct TextEditor: NSViewRepresentable {
 
 struct ConversationItemView: View {
 	@Environment(\.customWidths) private var widths: [ViewSide: CGFloat]
-	@State var conversationItemManager = ConversationItemViewManager()
+	@Bindable var conversationItemManager: ConversationItemViewManager
 	@Bindable var chatViewManager: ChatViewManager
 	@Binding var highlightedText: String
 	@Binding var disablePromptEntry: Bool
@@ -212,6 +212,7 @@ struct ConversationItemView: View {
 	var removePrompt: (String) -> Void
 	
 	init(chatViewManager: ChatViewManager,
+		 conversationItemManager: ConversationItemViewManager,
 		 highlightedText: Binding<String>,
 		 disablePromptEntry: Binding<Bool>,
 		 conversationItem: ConversationItem,
@@ -219,6 +220,7 @@ struct ConversationItemView: View {
 		 side: ViewSide,
 		 removePrompt: @escaping (String) -> Void) {
 		self.chatViewManager = chatViewManager
+		self.conversationItemManager = conversationItemManager
 		_highlightedText = highlightedText
 		_disablePromptEntry = disablePromptEntry
 		self.conversationItem = conversationItem
@@ -250,14 +252,19 @@ struct ConversationItemView: View {
 				.padding()
 				.cornerRadius(8)
 				.onChange(of: conversationItem.output) { oldValue, newValue in
-					startAnimation()
+					if !conversationItemManager.hasAnimatedOnce {
+						startAnimation()
+						conversationItemManager.hasAnimatedOnce = true
+					} else {
+						displayedText = newValue
+						currentIndex = newValue.count
+					}
 					if let font  = NSFont(name: "Helvetica Neue", size: 16) {
 						hasMoreThanTwoLines = countLines(in: newValue,
 														 width: (widths[side] ?? 0.0) - 40,
 														 font: font) > 20
 					}
 				}
-				.background(.pink)
 				.onChange(of: conversationItemManager.highlightedText) { _, newValue in
 					highlightedText = newValue
 				}
@@ -269,6 +276,10 @@ struct ConversationItemView: View {
 			}
 		}
 		.onAppear {
+			if !conversationItem.output.isEmpty && conversationItemManager.hasAnimatedOnce {
+				displayedText = conversationItem.output
+				currentIndex = conversationItem.output.count
+			}
 			disablePromptEntry = disableWhileActions
 		}
 		.onChange(of: disableWhileActions) { _, newValue in
@@ -281,14 +292,38 @@ struct ConversationItemView: View {
 			Text(conversationItem.prompt)
 				.font(.custom("HelveticaNeue", size: 18))
 				.bold()
+			if hasMoreThanTwoLines && !isAnimating {
+				Button {
+					conversationItemManager.toggleIsExpanded()
+				} label: {
+					Text(conversationItemManager.isExpanded ? "Collapse" : "Show more")
+						.font(.footnote)
+						.foregroundColor(.blue)
+				}
+			}
+			Spacer()
 			if !isThreadView {
-				Button(action: {
-					chatViewManager.toggleThreadView()
-				}) {
+				HStack(spacing: 4) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(.red)
+					Text("\(chatViewManager.threadConversationsCount(conversationItem.id)) prompts")
+						.font(.system(size: 12))
+				}
+				.padding(.horizontal, 6)
+				.padding(.vertical, 2)
+				.background(Color.blue.opacity(0.2))
+				.cornerRadius(8)
+				.overlay(
+					RoundedRectangle(cornerRadius: 8)
+						.stroke(Color.blue, lineWidth: 1)
+				)
+				.onTapGesture {
+					chatViewManager.toggleThreadView()
+					chatViewManager.currentOpenedConversationItemId = conversationItem.id
+					chatViewManager.setThreadManager(for: conversationItem)
 				}
 				.disabled(chatViewManager.showThreadView)
+				
 				Button {
 					removePrompt(conversationItem.id)
 					if let textView = textView {
@@ -301,15 +336,6 @@ struct ConversationItemView: View {
 				} label: {
 					Image(systemName: "trash")
 						.foregroundColor(.red)
-				}
-			}
-			if hasMoreThanTwoLines && !isAnimating {
-				Button {
-					conversationItemManager.toggleIsExpanded()
-				} label: {
-					Text(conversationItemManager.isExpanded ? "Collapse" : "Show more")
-						.font(.footnote)
-						.foregroundColor(.blue)
 				}
 			}
 		}
@@ -345,8 +371,7 @@ struct ConversationItemView: View {
 		VStack {
 			Button("Explain") {
 				conversationItemManager.setAIExplainButton(false)
-				chatViewManager.prompt = conversationItemManager.highlightedText
-				chatViewManager.sendAIExplainPrompt()
+				chatViewManager.sendAIExplainPrompt(conversationItemManager.highlightedText)
 				chatViewManager.showAIExplanationView = true
 			}
 			.foregroundColor(.white)
@@ -419,11 +444,12 @@ struct ConversationItemView: View {
 }
 
 #Preview {
-	ConversationItemView(chatViewManager: ChatViewManager(),
-			   highlightedText: .constant(""),
-			   disablePromptEntry: .constant(false),
-			   conversationItem: ConversationItem.cards.first!,
-			   isThreadView: false,
-			   side: .left,
-			   removePrompt: { _ in })
+	ConversationItemView(chatViewManager: ChatViewManager(), 
+						 conversationItemManager: ConversationItemViewManager(),
+						 highlightedText: .constant(""),
+						 disablePromptEntry: .constant(false),
+						 conversationItem: ConversationItem.items.first!,
+						 isThreadView: false,
+						 side: .left,
+						 removePrompt: { _ in })
 }

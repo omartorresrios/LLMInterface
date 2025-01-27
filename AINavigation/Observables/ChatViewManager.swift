@@ -14,26 +14,25 @@ final class ChatViewManager: Identifiable {
 	let id = UUID()
 	var name = "Unnamed chat"
 	var conversationItems: [ConversationItem] = []
-	var prompt = ""
+	var threadManagers: [String: ThreadViewManager] = [:]
+	var conversationItemManagers: [String: ConversationItemViewManager] = [:]
 	var searchText = ""
 	var selectedPromptIndex: Int?
 	var showSidebar = false
 	var showAIExplanationView = false
 	var showThreadView = false
 	var currentSelectedConversationItemId: String?
+	var currentOpenedConversationItemId: String?
 	var AIExplainItem = ConversationItem()
 	var textViews: [NSTextView] = []
 	
-	func sendPrompt() {
+	func sendPrompt(_ prompt: String) {
 		let conversationId = UUID().uuidString
 		let newConversation = ConversationItem(id: conversationId,
 											   prompt: prompt,
 											   output: "",
 											   outputStatus: .pending)
 		conversationItems.append(newConversation)
-		DispatchQueue.main.async {
-			self.prompt = ""
-		}
 		request(prompt: newConversation.prompt) { content in
 			DispatchQueue.main.async { [weak self] in
 				guard let self else { return }
@@ -47,10 +46,9 @@ final class ChatViewManager: Identifiable {
 		}
 	}
 	
-	func sendAIExplainPrompt() {
-		let prompt = "Can you explain more of this with a summary?: \(self.prompt)"
+	func sendAIExplainPrompt(_ prompt: String) {
+		let prompt = "Can you explain more of this with a summary?: \(prompt)"
 		AIExplainItem.prompt = prompt
-		self.prompt = ""
 		request(prompt: prompt) { content in
 			DispatchQueue.main.async { [weak self] in
 				guard let self else { return }
@@ -119,14 +117,42 @@ final class ChatViewManager: Identifiable {
 		AIExplainItem.reset()
 	}
 	
-	func addPrompt(conversationItem: ConversationItem) {
-		conversationItems.append(conversationItem)
-	}
-	
 	func removeConversationItem(_ conversationId: String) {
 		if let index = conversationItems.firstIndex(where: { $0.id == conversationId }) {
 			conversationItems.remove(at: index)
 		}
+	}
+	
+	func setThreadManager(for conversation: ConversationItem) {
+		if threadManagers[conversation.id] == nil {
+			threadManagers[conversation.id] = ThreadViewManager(conversationItem: conversation)
+		}
+	}
+	
+	func getThreadManager() -> ThreadViewManager? {
+		if let conversationId = conversationItems.first(where: { $0.id == currentOpenedConversationItemId })?.id {
+			return threadManagers[conversationId]
+		}
+		return nil
+	}
+	
+	func threadConversationsCount(_ id: String) -> Int {
+		if let conversationId = conversationItems.first(where: { $0.id == id })?.id,
+		   let threadManager = threadManagers[conversationId] {
+			return threadManager.threadConversations.count
+		}
+		return 0
+	}
+	
+	func getConversationItemManager(for id: String) -> ConversationItemViewManager {
+		if conversationItemManagers[id] == nil {
+			conversationItemManagers[id] = ConversationItemViewManager()
+		}
+		return conversationItemManagers[id] ?? ConversationItemViewManager()
+	}
+	
+	func removeConversationItemManager(id: String) {
+		conversationItemManagers[id] = nil
 	}
 	
 	func setName(_ name: String) {

@@ -11,7 +11,6 @@ struct ChatView: View {
 	@Binding var chatViewManager: ChatViewManager
 	@State private var scrollViewProxy: ScrollViewProxy?
 	@FocusState private var isFocused: Bool
-	var addNewPrompt: (ConversationItem) -> Void
 	@State var highlightedText = ""
 	@State private var displayedText = ""
 	@State private var isAnimating = false//To-do We are not using it currently. See if we can use for some validation
@@ -30,7 +29,8 @@ struct ChatView: View {
 					//						promptsSidebarView
 					//							.frame(width: geometry.size.width * 0.2)
 					//					}
-					ConversationsScrollView(chatViewManager: chatViewManager,
+					ConversationsScrollView(chatViewManager: chatViewManager, 
+											conversationItems: chatViewManager.conversationItems,
 											highlightedText: $highlightedText,
 											scrollViewProxy: $scrollViewProxy,
 											isThreadView: false,
@@ -46,7 +46,8 @@ struct ChatView: View {
 						}
 					}
 					
-					if chatViewManager.showThreadView {
+					if chatViewManager.showThreadView,
+					   let threadManager = chatViewManager.getThreadManager() {
 						DividerView()
 							.frame(width: 4)
 							.background(Color.gray)
@@ -72,7 +73,8 @@ struct ChatView: View {
 										}
 									}
 							)
-						ThreadView(chatViewManager: chatViewManager)
+						ThreadView(chatViewManager: chatViewManager,
+								   threadViewManager: threadManager)
 							.frame(width: rightViewWidth)
 							.environment(\.customWidths, [.right: rightViewWidth])
 					}
@@ -216,5 +218,5 @@ struct ChatView: View {
 }
 
 #Preview {
-	ChatView(chatViewManager: .constant(ChatViewManager()), addNewPrompt: { _ in })
+	ChatView(chatViewManager: .constant(ChatViewManager()))
 }

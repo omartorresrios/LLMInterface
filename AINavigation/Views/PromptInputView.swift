@@ -8,22 +8,23 @@
 import SwiftUI
 
 struct PromptInputView: View {
-	@Bindable var chatViewManager: ChatViewManager
+	@State private var prompt = ""
+	var sendPrompt: (String) -> Void
 	@FocusState var isFocused: Bool
 	var disablePromptEntry: Bool
 	
 	var body: some View {
 		HStack {
-			TextField("Enter your prompt", text: $chatViewManager.prompt)
+			TextField("Enter your prompt", text: $prompt)
 				.textFieldStyle(RoundedBorderTextFieldStyle())
 				.onSubmit {
-					if !chatViewManager.prompt.isEmpty {
-						chatViewManager.sendPrompt()
+					if !prompt.isEmpty {
+						sendPrompt(prompt)
 					}
 				}
 				.focused($isFocused)
 			
-			Button(action: { chatViewManager.sendPrompt() }) {
+			Button(action: { sendPrompt(prompt) }) {
 				Text("Send")
 					.padding(.horizontal)
 					.padding(.vertical, 8)
@@ -32,7 +33,7 @@ struct PromptInputView: View {
 					.cornerRadius(8)
 			}
 			.buttonStyle(.plain)
-			.disabled(chatViewManager.prompt.isEmpty)
+			.disabled(prompt.isEmpty)
 		}
 		.disabled(disablePromptEntry)
 		.onAppear {
@@ -44,5 +45,6 @@ struct PromptInputView: View {
 }
 
 #Preview {
-	PromptInputView(chatViewManager: ChatViewManager(), disablePromptEntry: false)
+	PromptInputView(sendPrompt: { _ in },
+					disablePromptEntry: false)
 }

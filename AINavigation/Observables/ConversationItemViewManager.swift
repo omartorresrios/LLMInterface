@@ -12,6 +12,7 @@ import Foundation
 final class ConversationItemViewManager {
 	var isExpanded = true
 	var showAIExplainButton = false
+	var hasAnimatedOnce = false
 	var buttonPosition: CGPoint = .zero
 	var highlightedText = ""
 	

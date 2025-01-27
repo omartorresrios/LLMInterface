@@ -43,10 +43,7 @@ struct ChatContainersView: View {
 						.frame(width: geometry.size.width * 0.2)
 					Divider()
 					if let chatViewManager = chatContainersManager.getSelectedChat() {
-						ChatView(chatViewManager: chatViewManager,
-								 addNewPrompt: { newChat in
-							addNewPrompt(with: newChat, to: chatViewManager.wrappedValue)
-						})
+						ChatView(chatViewManager: chatViewManager)
 						.searchable(text: chatViewManager.searchText, prompt: "Search in chat history")
 					}
 				}
@@ -67,11 +64,6 @@ struct ChatContainersView: View {
 				}
 			}
 		}
-	}
-	
-	private func addNewPrompt(with conversationItem: ConversationItem, 
-							  to chatViewManager: ChatViewManager) {
-		chatViewManager.addPrompt(conversationItem: conversationItem)
 	}
 }
 
