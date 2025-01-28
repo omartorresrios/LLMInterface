@@ -377,6 +377,8 @@ struct ConversationItemView: View {
 			.foregroundColor(.white)
 			Button("Open thread") {
 				chatViewManager.toggleThreadView()
+				chatViewManager.currentOpenedConversationItemId = conversationItem.id
+				chatViewManager.setThreadManager(for: conversationItem)
 				conversationItemManager.setAIExplainButton(false)
 			}
 			.foregroundColor(.white)
