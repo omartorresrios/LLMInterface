@@ -22,13 +22,8 @@ struct ChatView: View {
 	
 	var body: some View {
 		GeometryReader { geometry in
-			ZStack {
+			ZStack(alignment: .leading) {
 				HStack(alignment: .top, spacing: 0) {
-					// THIS SIDEBAR COULD BE SHOWN ON TOP OF THE HSTACK
-					//					if chatViewManager.showSidebar {
-					//						promptsSidebarView
-					//							.frame(width: geometry.size.width * 0.2)
-					//					}
 					ConversationsScrollView(chatViewManager: chatViewManager, 
 											conversationItems: chatViewManager.conversationItems,
 											highlightedText: $highlightedText,
@@ -37,7 +32,7 @@ struct ChatView: View {
 											side: .left)
 					.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
 					.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-						chatViewManager.showSidebar = height > geometry.size.height
+						chatViewManager.showPromptsSidebarView = height > geometry.size.height
 					}
 					.environment(\.customWidths, [.left: leftViewWidth])
 					.onChange(of: chatViewManager.conversationItems.count) { _, _ in
@@ -110,7 +105,22 @@ struct ChatView: View {
 						startAnimation()
 					}
 				}
+				
+				if chatViewManager.showPromptsSidebarView {
+					PromptsSidebarView(conversationItems: chatViewManager.conversationItems,
+									   selectedPromptIndex: chatViewManager.selectedPromptIndex,
+									   geometry: geometry,
+									   onSelectedItem: { onSelectedItem($0.id) })
+					.frame(width: geometry.size.width * 0.2)
+				}
 			}
+		}
+	}
+	
+	private func onSelectedItem(_ conversationItemId: String) {
+		if let index = chatViewManager.conversationItems.firstIndex(where: { $0.id == conversationItemId }) {
+			chatViewManager.selectedPromptIndex = index
+			scrollToConversationItem(conversationItemId)
 		}
 	}
 	
@@ -122,9 +132,8 @@ struct ChatView: View {
 	}
 	
 	private func conversationsScrollViewWidth(with geometryWidth: CGFloat, showThreadView: Bool) -> CGFloat {
-		let sidebarWidth = chatViewManager.showSidebar ? geometryWidth * 0.2 : 0
 		let threadViewWidth = showThreadView ? geometryWidth * 0.3 : 0
-		return geometryWidth - sidebarWidth - threadViewWidth
+		return geometryWidth - threadViewWidth
 	}
 	
 	private func threadViewConversationsScrollViewWidth(with geometryWidth: CGFloat) -> CGFloat {
@@ -166,32 +175,10 @@ struct ChatView: View {
 		}
 	}
 	
-	private var promptsSidebarView: some View {
-		VStack(alignment: .leading) {
-			Text("Prompts")
-				.font(.headline)
-				.padding()
-			Divider()
-			ForEach(chatViewManager.conversationItems, id: \.id) { conversationItem in
-				Button(action: {
-					if let index = chatViewManager.conversationItems.firstIndex(where: { $0.id == conversationItem.id }) {
-						chatViewManager.selectedPromptIndex = index
-						scrollToConversationItem(conversationItem.id)
-					}
-				}) {
-					Text(conversationItem.prompt)
-						.foregroundColor(chatViewManager.selectedPromptIndex == chatViewManager.conversationItems.firstIndex(where: { $0.id == conversationItem.id }) ? .blue : .primary)
-				}
-				.padding(.vertical, 4)
-			}
-		}
-		.padding()
-	}
-	
 	private func scrollToConversationItem(_ id: String) {
 		if let scrollViewProxy = scrollViewProxy {
 			withAnimation {
-				scrollViewProxy.scrollTo(id)
+				scrollViewProxy.scrollTo(id, anchor: .top)
 			}
 		}
 	}
@@ -205,6 +192,50 @@ struct ChatView: View {
 		 }
 	}
 }
+
+struct PromptsSidebarView: View {
+	let conversationItems: [ConversationItem]
+	let selectedPromptIndex: Int?
+	@State private var showPrompts = false
+	let geometry: GeometryProxy
+	var onSelectedItem: (ConversationItem) -> Void
+	
+	var body: some View {
+		ZStack {
+			if showPrompts {
+				VStack(alignment: .leading) {
+					Text("Prompts")
+						.font(.headline)
+					ForEach(conversationItems, id: \.id) { conversationItem in
+						Button(action: {
+							onSelectedItem(conversationItem)
+						}) {
+							Text(conversationItem.prompt)
+								.foregroundColor(selectedPromptIndex == conversationItems.firstIndex(where: { $0.id == conversationItem.id }) ? .blue : .primary)
+						}
+					}
+				}
+				.padding(8)
+				.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+				.background(.blue)
+				.transition(.move(edge: .leading))
+			}
+			
+			Rectangle()
+				.fill(.green)
+				.frame(width: 20, height: 40)
+				.position(x: showPrompts ? geometry.size.width * 0.2 : 0,
+						  y: geometry.size.height / 2)
+				.onTapGesture {
+					withAnimation(.easeInOut(duration: 0.1)) {
+						showPrompts.toggle()
+					}
+				}
+		}
+		.clipped()
+	}
+}
+
 
 #Preview {
 	ChatView(chatViewManager: .constant(ChatViewManager()))

@@ -18,7 +18,7 @@ final class ChatViewManager: Identifiable {
 	var conversationItemManagers: [String: ConversationItemViewManager] = [:]
 	var searchText = ""
 	var selectedPromptIndex: Int?
-	var showSidebar = false
+	var showPromptsSidebarView = false
 	var showAIExplanationView = false
 	var showThreadView = false
 	var currentSelectedConversationItemId: String?
