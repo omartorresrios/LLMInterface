@@ -16,7 +16,8 @@ struct PromptInputView: View {
 	var body: some View {
 		HStack {
 			TextField("Enter your prompt", text: $prompt)
-				.textFieldStyle(RoundedBorderTextFieldStyle())
+				.textFieldStyle(.plain)
+				.font(.system(size: 14))
 				.onSubmit {
 					if !prompt.isEmpty {
 						sendPrompt(prompt)
@@ -27,6 +28,7 @@ struct PromptInputView: View {
 			Button(action: { sendPrompt(prompt) }) {
 				Text("Send")
 					.padding(.horizontal)
+					.font(.system(size: 14))
 					.padding(.vertical, 8)
 					.background(Color.blue)
 					.foregroundColor(.white)
@@ -35,6 +37,12 @@ struct PromptInputView: View {
 			.buttonStyle(.plain)
 			.disabled(prompt.isEmpty)
 		}
+		.padding()
+		.cornerRadius(8)
+		.overlay(
+			RoundedRectangle(cornerRadius: 8)
+				.stroke(Color.gray, lineWidth: 0.5)
+		)
 		.disabled(disablePromptEntry)
 		.onAppear {
 			DispatchQueue.main.async {
