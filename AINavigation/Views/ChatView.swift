@@ -83,62 +83,51 @@ struct ChatView: View {
 				.onAppear {
 					DispatchQueue.main.async {
 						totalWidth = geometry.size.width
-						leftViewWidth = getConversationsScrollViewWidth(with: totalWidth,
+						leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
 																		showThreadView: chatViewManager.showThreadView)
-						rightViewWidth = getThreadViewConversationsScrollViewWidth(with: totalWidth)
+						rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
 					}
 				}
 				.onChange(of: chatViewManager.showThreadView) { _, newValue in
-					leftViewWidth = getConversationsScrollViewWidth(with: totalWidth,
+					leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
 																	showThreadView: newValue)
-					rightViewWidth = getThreadViewConversationsScrollViewWidth(with: totalWidth)
+					rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
 				}
 				
 				if chatViewManager.showAIExplanationView {
 					Color.black.opacity(0.3)
 						.edgesIgnoringSafeArea(.all)
-					VStack {
-						Text("Explaining -> \(highlightedText)")
-						if chatViewManager.AIExplainItem.outputStatus == .pending {
-							ProgressView()
-						} else {
-							ScrollView {
-								Text(displayedText)
-									.padding()
-							}
-							Button("Close") {
-								chatViewManager.showAIExplanationView = false
-								chatViewManager.resetAIExplainItem()
-								displayedText = ""
-								stopAnimation()
-							}
-							.buttonStyle(.bordered)
-						}
-					}
+					AIExplainView(subjectToExplainText: highlightedText,
+								  outputText: displayedText,
+								  AIExplainItemIsPending: chatViewManager.AIExplainItem.outputStatus == .pending,
+								  maxWidth: geometry.size.width * 0.5,
+								  maxHeight: geometry.size.height * 0.8,
+								  closeView: closeAIExplainViewAction)
 					.onAppear {
 						startAnimation()
 					}
 					.onChange(of: chatViewManager.AIExplainItem) { _, _ in
 						startAnimation()
 					}
-					.padding()
-					.frame(maxWidth: geometry.size.width * 0.5, maxHeight: geometry.size.height * 0.8)
-					.background(Color(NSColor.windowBackgroundColor))
-					.foregroundColor(Color(NSColor.labelColor))
-					.cornerRadius(8)
-					.shadow(radius: 5)
 				}
 			}
 		}
 	}
 	
-	private func getConversationsScrollViewWidth(with geometryWidth: CGFloat, showThreadView: Bool) -> CGFloat {
+	private func closeAIExplainViewAction() {
+		chatViewManager.showAIExplanationView = false
+		chatViewManager.resetAIExplainItem()
+		displayedText = ""
+		stopAnimation()
+	}
+	
+	private func conversationsScrollViewWidth(with geometryWidth: CGFloat, showThreadView: Bool) -> CGFloat {
 		let sidebarWidth = chatViewManager.showSidebar ? geometryWidth * 0.2 : 0
 		let threadViewWidth = showThreadView ? geometryWidth * 0.3 : 0
 		return geometryWidth - sidebarWidth - threadViewWidth
 	}
 	
-	private func getThreadViewConversationsScrollViewWidth(with geometryWidth: CGFloat) -> CGFloat {
+	private func threadViewConversationsScrollViewWidth(with geometryWidth: CGFloat) -> CGFloat {
 		let conversationsScrollViewWidth = geometryWidth * 0.7
 		return geometryWidth - conversationsScrollViewWidth
 	}
