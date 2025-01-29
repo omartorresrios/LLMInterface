@@ -21,11 +21,15 @@ struct PromptInputView: View {
 				.onSubmit {
 					if !prompt.isEmpty {
 						sendPrompt(prompt)
+						prompt = ""
 					}
 				}
 				.focused($isFocused)
 			
-			Button(action: { sendPrompt(prompt) }) {
+			Button(action: {
+				sendPrompt(prompt)
+				prompt = ""
+			}) {
 				Text("Send")
 					.padding(.horizontal)
 					.font(.system(size: 14))

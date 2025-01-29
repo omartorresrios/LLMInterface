@@ -8,6 +8,36 @@
 import SwiftUI
 import Observation
 
+struct SearchField: View {
+	@Binding var searchText: String
+	
+	var body: some View {
+		HStack(spacing: 4) {
+			Image(systemName: "magnifyingglass")
+				.foregroundColor(.gray)
+			
+			TextField("Search...", text: $searchText)
+				.textFieldStyle(.plain)
+				.font(.system(size: 14))
+				.onSubmit {
+					
+				}
+			
+			if !searchText.isEmpty {
+				Button(action: { searchText = "" }) {
+					Image(systemName: "xmark.circle.fill")
+						.foregroundColor(.gray)
+				}
+				.buttonStyle(PlainButtonStyle())
+			}
+		}
+		.padding(.horizontal, 6)
+		.padding(.vertical, 4)
+		.background(Color(hex: "E6D5AD"))
+		.cornerRadius(6)
+	}
+}
+
 struct ShowEditModal {
 	var show: Bool
 	var currentChatName: String
@@ -36,33 +66,31 @@ struct ChatContainersView: View {
 	
 	var body: some View {
 		GeometryReader { geometry in
-			ZStack {
+//			ZStack(alignment: .top) {
 				HStack(spacing: 0) {
 					ChatsSidebarView(chatContainersManager: chatContainersManager,
-								showEditModal: $showEditModal)
-						.frame(width: geometry.size.width * 0.2)
+									 showEditModal: $showEditModal)
+					.frame(width: geometry.size.width * 0.2)
 					Divider()
 					if let chatViewManager = chatContainersManager.getSelectedChat() {
 						ChatView(chatViewManager: chatViewManager)
-						.searchable(text: chatViewManager.searchText, prompt: "Search in chat history")
 					}
 				}
-				.background(Color(hex: "F9F2E2"))
-				if showEditModal.show {
-					Color.black.opacity(0.4)
-						.edgesIgnoringSafeArea(.all)
-					
-					EditChatNameView(chatName: $showEditModal.currentChatName, 
-									 isPresented: $showEditModal.show,
-									 chatContainerWidth: geometry.size.width)
-						.onDisappear {
-							if let index = chatContainersManager.chatViewManagers.firstIndex(where: { $0.id == showEditModal.editingChatId }) {
-								chatContainersManager.chatViewManagers[index].setName(showEditModal.currentChatName)
-							}
-						}
-						.transition(.scale)
-				}
-			}
+//				if showEditModal.show {
+//					Color.black.opacity(0.4)
+//						.edgesIgnoringSafeArea(.all)
+//					
+//					EditChatNameView(chatName: $showEditModal.currentChatName, 
+//									 isPresented: $showEditModal.show,
+//									 chatContainerWidth: geometry.size.width)
+//						.onDisappear {
+//							if let index = chatContainersManager.chatViewManagers.firstIndex(where: { $0.id == showEditModal.editingChatId }) {
+//								chatContainersManager.chatViewManagers[index].setName(showEditModal.currentChatName)
+//							}
+//						}
+//						.transition(.scale)
+//				}
+//			}
 		}
 	}
 }

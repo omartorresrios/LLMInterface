@@ -33,8 +33,10 @@ struct AIExplainView: View {
 							   maxHeight: .infinity,
 							   alignment: .top)
 				} else {
+					let attributedString = try? AttributedString(markdown: outputText,
+																 options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
 					ScrollView {
-						Text(outputText)
+						Text(attributedString ?? "")
 					}
 				}
 			}

@@ -206,6 +206,7 @@ struct ConversationItemView: View {
 	@State private var timer: Timer?
 	@State private var textView: NSTextView?
 	@State private var textEditorHeight: CGFloat = 0
+	@State var fullOutput = ""
 	let conversationItem: ConversationItem
 	var isThreadView: Bool
 	var side: ViewSide
@@ -236,46 +237,44 @@ struct ConversationItemView: View {
 	}
 	
 	var body: some View {
-		HStack(alignment: .top) {
-			ZStack {
-				VStack(alignment: .leading) {
-					topButtonsView
-					
-					if conversationItem.outputStatus == .completed {
-						textEditorView
-					} else {
-						ProgressView()
-							.padding(.top, 8)
-					}
-				}
-				.frame(maxWidth: .infinity, alignment: .leading)
-				.padding()
-				.cornerRadius(8)
-				.onChange(of: conversationItem.output) { oldValue, newValue in
-					if !conversationItemManager.hasAnimatedOnce {
-						startAnimation()
-						conversationItemManager.hasAnimatedOnce = true
-					} else {
-						displayedText = newValue
-						currentIndex = newValue.count
-					}
-					if let font  = NSFont(name: "Helvetica Neue", size: 16) {
-						hasMoreThanTwoLines = countLines(in: newValue,
-														 width: (widths[side] ?? 0.0) - 40,
-														 font: font) > 20
-					}
-				}
-				.onChange(of: conversationItemManager.highlightedText) { _, newValue in
-					highlightedText = newValue
-				}
+		ZStack {
+			VStack(alignment: .leading) {
+				topButtonsView
 				
-				if conversationItemManager.showAIExplainButton &&
-					chatViewManager.currentSelectedConversationItemId == conversationItem.id {
-					AIExplainButton
+				if conversationItem.outputStatus == .completed {
+					textEditorView
+				} else {
+					ProgressView()
+						.padding(.top, 8)
 				}
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
+			.padding()
+			.cornerRadius(8)
+			.onChange(of: conversationItem.output) { oldValue, newValue in
+				if !conversationItemManager.hasAnimatedOnce {
+					startAnimation()
+					conversationItemManager.hasAnimatedOnce = true
+				} else {
+					displayedText = newValue
+					currentIndex = newValue.count
+				}
+				if let font  = NSFont(name: "Helvetica Neue", size: 16) {
+					hasMoreThanTwoLines = countLines(in: newValue,
+													 width: (widths[side] ?? 0.0) - 40,
+													 font: font) > 20
+				}
+			}
+			.onChange(of: conversationItemManager.highlightedText) { _, newValue in
+				highlightedText = newValue
+			}
+			if conversationItemManager.showAIExplainButton &&
+				chatViewManager.currentSelectedConversationItemId == conversationItem.id {
+				AIExplainButton
 			}
 		}
 		.onAppear {
+			setupKeyboardMonitor()
 			if !conversationItem.output.isEmpty && conversationItemManager.hasAnimatedOnce {
 				displayedText = conversationItem.output
 				currentIndex = conversationItem.output.count
@@ -285,8 +284,20 @@ struct ConversationItemView: View {
 		.onChange(of: disableWhileActions) { _, newValue in
 			disablePromptEntry = newValue
 		}
+		.onChange(of: isAnimating) { _, newValue in
+			chatViewManager.conversationItemIsAnimating = newValue && hasMoreThanTwoLines
+		}
 	}
 	
+	func setupKeyboardMonitor() {
+		NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+			if event.keyCode == 36 && isAnimating {
+				stopAnimation()
+			}
+			return event
+		}
+	}
+
 	private var topButtonsView: some View {
 		HStack {
 			Text(conversationItem.prompt)
@@ -398,16 +409,18 @@ struct ConversationItemView: View {
 		guard !conversationItem.output.isEmpty,
 			  currentIndex == 0 else { return }
 		
+		fullOutput = conversationItem.output
 		isAnimating = true
+		displayedText = ""
+		
 		timer = Timer.scheduledTimer(withTimeInterval: 0.005, repeats: true) { timer in
-			guard currentIndex < conversationItem.output.count else {
+			guard currentIndex < fullOutput.count else {
 				timer.invalidate()
 				isAnimating = false
 				return
 			}
-			
-			let index = conversationItem.output.index(conversationItem.output.startIndex, offsetBy: currentIndex)
-			displayedText += String(conversationItem.output[index])
+			let index = fullOutput.index(fullOutput.startIndex, offsetBy: currentIndex)
+			displayedText += String(fullOutput[index])
 			currentIndex += 1
 		}
 	}
@@ -415,8 +428,10 @@ struct ConversationItemView: View {
 	private func stopAnimation() {
 		timer?.invalidate()
 		timer = nil
-		displayedText = conversationItem.output
+		displayedText = fullOutput
+		currentIndex = fullOutput.count
 		isAnimating = false
+		chatViewManager.conversationItemIsAnimating = false
 	}
 	
 	private func countLines(in string: String, width: CGFloat, font: NSFont) -> Int {

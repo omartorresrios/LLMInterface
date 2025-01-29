@@ -79,6 +79,17 @@ struct ConversationsScrollView: View {
 					.onAppear {
 						scrollViewProxy = scrollProxy
 					}
+					.overlay(alignment: .bottomTrailing) {
+						Group {
+								if chatViewManager.conversationItemIsAnimating {
+								Text("Press enter to get the answer now")
+									.fontWeight(.bold)
+									.padding()
+									.background(.red)
+								}
+						}
+						.padding(.trailing)
+					}
 				}
 				PromptInputView(sendPrompt: { prompt in
 					if side == .left {

@@ -118,10 +118,8 @@ struct ThreadView: View {
 									sendPrompt: { prompt in
 				threadViewManager.sendPrompt(prompt)
 			})
-			.background(.blue.opacity(0.7))
 		}
 		.padding()
-		.background(.yellow.opacity(0.7))
 	}
 }
 

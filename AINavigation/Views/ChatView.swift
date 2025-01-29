@@ -23,86 +23,94 @@ struct ChatView: View {
 	var body: some View {
 		GeometryReader { geometry in
 			ZStack(alignment: .leading) {
-				HStack(alignment: .top, spacing: 0) {
-					ConversationsScrollView(chatViewManager: chatViewManager, 
-											conversationItems: chatViewManager.conversationItems,
-											highlightedText: $highlightedText,
-											scrollViewProxy: $scrollViewProxy,
-											isThreadView: false,
-											side: .left)
-					.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
-					.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-						chatViewManager.showPromptsSidebarView = height > geometry.size.height
-					}
-					.environment(\.customWidths, [.left: leftViewWidth])
-					.onChange(of: chatViewManager.conversationItems.count) { _, _ in
-						if let scrollViewProxy = scrollViewProxy {
-							scrollToBottom(proxy: scrollViewProxy)
+				ZStack {
+					VStack(alignment: .leading, spacing: 0) {
+						SearchField(searchText: $chatViewManager.searchText)
+							.padding(.horizontal)
+							.padding(.top)
+							.padding(.bottom, 8)
+							.frame(maxWidth: geometry.size.width * 0.7)
+						HStack(alignment: .top, spacing: 0) {
+							ConversationsScrollView(chatViewManager: chatViewManager,
+													conversationItems: chatViewManager.conversationItems,
+													highlightedText: $highlightedText,
+													scrollViewProxy: $scrollViewProxy,
+													isThreadView: false,
+													side: .left)
+							.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
+							.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
+								chatViewManager.showPromptsSidebarView = height > geometry.size.height
+							}
+							.environment(\.customWidths, [.left: leftViewWidth])
+							.onChange(of: chatViewManager.conversationItems.count) { _, _ in
+								if let scrollViewProxy = scrollViewProxy {
+									scrollToBottom(proxy: scrollViewProxy)
+								}
+							}
+							
+							if chatViewManager.showThreadView,
+							   let threadManager = chatViewManager.getThreadManager() {
+								DividerView()
+									.frame(width: 4)
+									.background(Color.gray)
+									.gesture(
+										DragGesture()
+											.onChanged { value in
+												let translation = value.translation.width
+												let totalWidth = geometry.size.width
+												
+												// Adjust left and right view widths proportionally
+												let newLeftWidth = leftViewWidth + translation
+												let newRightWidth = rightViewWidth - translation
+												
+												// Set minimum and maximum constraints
+												let minWidth = totalWidth * 0.3
+												let maxWidth = totalWidth * 0.7
+												
+												// Ensure views stay within constraints
+												if newLeftWidth >= minWidth && newLeftWidth <= maxWidth &&
+													newRightWidth >= minWidth && newRightWidth <= maxWidth {
+													leftViewWidth = newLeftWidth
+													rightViewWidth = newRightWidth
+												}
+											}
+									)
+								ThreadView(chatViewManager: chatViewManager,
+										   threadViewManager: threadManager)
+								.frame(width: rightViewWidth)
+								.environment(\.customWidths, [.right: rightViewWidth])
+							}
+						}
+						.onAppear {
+							DispatchQueue.main.async {
+								totalWidth = geometry.size.width
+								leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
+																			 showThreadView: chatViewManager.showThreadView)
+								rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
+							}
+						}
+						.onChange(of: chatViewManager.showThreadView) { _, newValue in
+							leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
+																		 showThreadView: newValue)
+							rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
 						}
 					}
-					
-					if chatViewManager.showThreadView,
-					   let threadManager = chatViewManager.getThreadManager() {
-						DividerView()
-							.frame(width: 4)
-							.background(Color.gray)
-							.gesture(
-								DragGesture()
-									.onChanged { value in
-										let translation = value.translation.width
-										let totalWidth = geometry.size.width
-										
-										// Adjust left and right view widths proportionally
-										let newLeftWidth = leftViewWidth + translation
-										let newRightWidth = rightViewWidth - translation
-										
-										// Set minimum and maximum constraints
-										let minWidth = totalWidth * 0.3
-										let maxWidth = totalWidth * 0.7
-										
-										// Ensure views stay within constraints
-										if newLeftWidth >= minWidth && newLeftWidth <= maxWidth &&
-											newRightWidth >= minWidth && newRightWidth <= maxWidth {
-											leftViewWidth = newLeftWidth
-											rightViewWidth = newRightWidth
-										}
-									}
-							)
-						ThreadView(chatViewManager: chatViewManager,
-								   threadViewManager: threadManager)
-							.frame(width: rightViewWidth)
-							.environment(\.customWidths, [.right: rightViewWidth])
-					}
-				}
-				.background(.green.opacity(0.5))
-				.onAppear {
-					DispatchQueue.main.async {
-						totalWidth = geometry.size.width
-						leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
-																		showThreadView: chatViewManager.showThreadView)
-						rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
-					}
-				}
-				.onChange(of: chatViewManager.showThreadView) { _, newValue in
-					leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
-																	showThreadView: newValue)
-					rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
-				}
-				
-				if chatViewManager.showAIExplanationView {
-					Color.black.opacity(0.3)
-						.edgesIgnoringSafeArea(.all)
-					AIExplainView(subjectToExplainText: highlightedText,
-								  outputText: displayedText,
-								  AIExplainItemIsPending: chatViewManager.AIExplainItem.outputStatus == .pending,
-								  maxWidth: geometry.size.width * 0.5,
-								  maxHeight: geometry.size.height * 0.8,
-								  closeView: closeAIExplainViewAction)
-					.onAppear {
-						startAnimation()
-					}
-					.onChange(of: chatViewManager.AIExplainItem) { _, _ in
-						startAnimation()
+					.background(Color(hex: "F9F2E2"))
+					if chatViewManager.showAIExplanationView {
+							Color.black.opacity(0.3)
+								.edgesIgnoringSafeArea(.all)
+						AIExplainView(subjectToExplainText: highlightedText,
+									  outputText: displayedText,
+									  AIExplainItemIsPending: chatViewManager.AIExplainItem.outputStatus == .pending,
+									  maxWidth: geometry.size.width * 0.5,
+									  maxHeight: geometry.size.height * 0.8,
+									  closeView: closeAIExplainViewAction)
+						.onAppear {
+							startAnimation()
+						}
+						.onChange(of: chatViewManager.AIExplainItem) { _, _ in
+							startAnimation()
+						}
 					}
 				}
 				

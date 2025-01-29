@@ -67,14 +67,14 @@ struct ChatsSidebarView: View {
 			}
 			.listStyle(.sidebar)
 			.scrollContentBackground(.hidden)
-			.toolbar {
-				Button(action: {
-					chatContainersManager.addChatContainer()
-				}) {
-					Label("Add Chat", systemImage: "plus")
-				}
-				.disabled(chatContainersManager.chatViewManagers.count > 2)
-			}
+//			.toolbar {
+//				Button(action: {
+//					chatContainersManager.addChatContainer()
+//				}) {
+//					Label("Add Chat", systemImage: "plus")
+//				}
+//				.disabled(chatContainersManager.chatViewManagers.count > 2)
+//			}
 		}
 	}
 }
