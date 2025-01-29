@@ -34,6 +34,14 @@ struct ConversationsScrollView: View {
 		self.sendPrompt = sendPrompt
 	}
 	
+	var filteredItems: [ConversationItem] {
+		if chatViewManager.searchText.isEmpty {
+			return conversationItems
+		} else {
+			return conversationItems.filter { $0.output.localizedCaseInsensitiveContains(chatViewManager.searchText) }
+		}
+	}
+	
 	var body: some View {
 		VStack(alignment: .leading, spacing: 0) {
 			if conversationItems.isEmpty {
@@ -52,7 +60,7 @@ struct ConversationsScrollView: View {
 				ScrollViewReader { scrollProxy in
 					ScrollView {
 						LazyVStack(alignment: .leading, spacing: 8) {
-							ForEach(conversationItems, id: \.id) { conversationItem in
+							ForEach(filteredItems, id: \.id) { conversationItem in
 								ConversationItemView(chatViewManager: chatViewManager,
 													 conversationItemManager: conversationItemManager(conversationItem.id),
 													 highlightedText: $highlightedText,
