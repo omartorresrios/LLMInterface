@@ -36,7 +36,10 @@ struct AIExplainView: View {
 					let attributedString = try? AttributedString(markdown: outputText,
 																 options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
 					ScrollView {
-						Text(attributedString ?? "")
+						VStack {
+							Text(attributedString ?? "")
+						}
+						.padding()
 					}
 				}
 			}
