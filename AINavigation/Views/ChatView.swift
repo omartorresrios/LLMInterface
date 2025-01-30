@@ -25,11 +25,13 @@ struct ChatView: View {
 			ZStack(alignment: .leading) {
 				ZStack {
 					VStack(alignment: .leading, spacing: 0) {
-						SearchField(searchText: $chatViewManager.searchText)
-							.padding(.horizontal)
-							.padding(.top)
-							.padding(.bottom, 8)
-							.frame(maxWidth: geometry.size.width * 0.7)
+						if chatViewManager.showPromptsSidebarView {
+							SearchField(searchText: $chatViewManager.searchText)
+								.padding(.horizontal)
+								.padding(.top)
+								.padding(.bottom, 8)
+								.frame(maxWidth: geometry.size.width * 0.7)
+						}
 						HStack(alignment: .top, spacing: 0) {
 							ConversationsScrollView(chatViewManager: chatViewManager,
 													conversationItems: chatViewManager.conversationItems,
@@ -39,7 +41,9 @@ struct ChatView: View {
 													side: .left)
 							.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
 							.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-								chatViewManager.showPromptsSidebarView = height > geometry.size.height
+								withAnimation {
+									chatViewManager.showPromptsSidebarView = height > geometry.size.height
+								}
 							}
 							.environment(\.customWidths, [.left: leftViewWidth])
 							.onChange(of: chatViewManager.conversationItems.count) { _, _ in
