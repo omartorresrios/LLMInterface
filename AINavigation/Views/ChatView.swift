@@ -25,7 +25,7 @@ struct ChatView: View {
 			ZStack(alignment: .leading) {
 				ZStack {
 					VStack(alignment: .leading, spacing: 0) {
-						if chatViewManager.showPromptsSidebarView {
+						if chatViewManager.conversationItems.count > 3 {
 							SearchField(searchText: $chatViewManager.searchText)
 								.padding(.horizontal)
 								.padding(.top)
@@ -40,13 +40,8 @@ struct ChatView: View {
 													isThreadView: false,
 													side: .left)
 							.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
-							.onPreferenceChange(ContentHeightPreferenceKey.self) { height in
-								withAnimation {
-									chatViewManager.showPromptsSidebarView = height > geometry.size.height
-								}
-							}
 							.environment(\.customWidths, [.left: leftViewWidth])
-							.onChange(of: chatViewManager.conversationItems.count) { _, _ in
+							.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
 								if let scrollViewProxy = scrollViewProxy {
 									scrollToBottom(proxy: scrollViewProxy)
 								}
@@ -99,7 +94,7 @@ struct ChatView: View {
 							rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
 						}
 					}
-					.background(Color(hex: "F9F2E2"))
+					.background(.white)
 					if chatViewManager.showAIExplanationView {
 							Color.black.opacity(0.3)
 								.edgesIgnoringSafeArea(.all)
@@ -118,7 +113,7 @@ struct ChatView: View {
 					}
 				}
 				
-				if chatViewManager.showPromptsSidebarView {
+				if chatViewManager.conversationItems.count > 3 {
 					PromptsSidebarView(conversationItems: chatViewManager.conversationItems,
 									   selectedPromptIndex: chatViewManager.selectedPromptIndex,
 									   geometry: geometry,

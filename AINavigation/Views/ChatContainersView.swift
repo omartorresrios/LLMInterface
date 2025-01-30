@@ -33,7 +33,6 @@ struct SearchField: View {
 		}
 		.padding(.horizontal, 6)
 		.padding(.vertical, 4)
-		.background(Color(hex: "E6D5AD"))
 		.cornerRadius(6)
 	}
 }

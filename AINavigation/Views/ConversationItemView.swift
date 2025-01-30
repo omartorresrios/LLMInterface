@@ -366,13 +366,14 @@ struct ConversationItemView: View {
 			if !conversationItemManager.isExpanded {
 				LinearGradient(
 					gradient: Gradient(colors: [
-						Color.gray.opacity(0),
-						Color.gray.opacity(0.2)
+						Color.white.opacity(0),
+						Color.white
 					]),
 					startPoint: .top,
 					endPoint: .bottom
 				)
-				.frame(height: 50) // Height of blur effect
+				.frame(height: 50)
+				.allowsHitTesting(false)
 			}
 		}
 		.disabled(!conversationItemManager.isExpanded)

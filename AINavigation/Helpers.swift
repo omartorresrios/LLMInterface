@@ -16,13 +16,6 @@ struct WidthKey: EnvironmentKey {
 	static let defaultValue: [ViewSide: CGFloat] = [:]
 }
 
-struct ContentHeightPreferenceKey: PreferenceKey {
-	static var defaultValue: CGFloat = 0
-	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-		value = max(value, nextValue())
-	}
-}
-
 extension EnvironmentValues {
 	var customWidths: [ViewSide: CGFloat] {
 		get { self[WidthKey.self] }

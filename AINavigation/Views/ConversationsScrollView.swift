@@ -73,16 +73,6 @@ struct ConversationsScrollView: View {
 							}
 						}
 						.padding(side == .left ? 16 : 0)
-						.background(
-							Group {
-								if scrollViewProxy != nil {
-									GeometryReader { contentGeometry in
-										Color.clear.preference(key: ContentHeightPreferenceKey.self,
-															   value: contentGeometry.size.height)
-									}
-								}
-							}
-						)
 					}
 					.onAppear {
 						scrollViewProxy = scrollProxy

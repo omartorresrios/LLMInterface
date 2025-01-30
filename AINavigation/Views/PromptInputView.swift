@@ -21,7 +21,9 @@ struct PromptInputView: View {
 				.onSubmit {
 					if !prompt.isEmpty {
 						sendPrompt(prompt)
-						prompt = ""
+						DispatchQueue.main.async {
+							prompt = ""
+						}
 					}
 				}
 				.focused($isFocused)
