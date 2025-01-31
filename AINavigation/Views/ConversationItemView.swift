@@ -211,6 +211,7 @@ struct ConversationItemView: View {
 	var isThreadView: Bool
 	var side: ViewSide
 	var removePrompt: (String) -> Void
+	var scrollToSelectedItem: (String) -> Void
 	
 	init(chatViewManager: ChatViewManager,
 		 conversationItemManager: ConversationItemViewManager,
@@ -219,7 +220,8 @@ struct ConversationItemView: View {
 		 conversationItem: ConversationItem,
 		 isThreadView: Bool,
 		 side: ViewSide,
-		 removePrompt: @escaping (String) -> Void) {
+		 removePrompt: @escaping (String) -> Void,
+		 scrollToSelectedItem: @escaping (String) -> Void) {
 		self.chatViewManager = chatViewManager
 		self.conversationItemManager = conversationItemManager
 		_highlightedText = highlightedText
@@ -228,6 +230,7 @@ struct ConversationItemView: View {
 		self.isThreadView = isThreadView
 		self.side = side
 		self.removePrompt = removePrompt
+		self.scrollToSelectedItem = scrollToSelectedItem
 	}
 	
 	private var disableWhileActions: Bool {
@@ -329,9 +332,14 @@ struct ConversationItemView: View {
 						.stroke(Color.blue, lineWidth: 1)
 				)
 				.onTapGesture {
-					chatViewManager.toggleThreadView()
-					chatViewManager.currentOpenedConversationItemId = conversationItem.id
-					chatViewManager.setThreadManager(for: conversationItem)
+					DispatchQueue.main.async {
+						withAnimation(.easeInOut(duration: 0.1)) {
+							chatViewManager.toggleThreadView()
+							chatViewManager.currentOpenedConversationItemId = conversationItem.id
+							chatViewManager.setThreadManager(for: conversationItem)
+							scrollToSelectedItem(conversationItem.id)
+						}
+					}
 				}
 				.disabled(chatViewManager.showThreadView)
 				
@@ -469,5 +477,6 @@ struct ConversationItemView: View {
 						 conversationItem: ConversationItem.items.first!,
 						 isThreadView: false,
 						 side: .left,
-						 removePrompt: { _ in })
+						 removePrompt: { _ in }, 
+						 scrollToSelectedItem: { _ in })
 }

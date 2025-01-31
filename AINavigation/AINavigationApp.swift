@@ -14,6 +14,6 @@ struct AINavigationApp: App {
 		WindowGroup {
 			ChatContainersView()
 		}
-		.windowStyle(.hiddenTitleBar)
+		.windowToolbarStyle(.unified(showsTitle: false))
     }
 }

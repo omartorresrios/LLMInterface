@@ -24,77 +24,68 @@ struct ChatView: View {
 		GeometryReader { geometry in
 			ZStack(alignment: .leading) {
 				ZStack {
-					VStack(alignment: .leading, spacing: 0) {
-						if chatViewManager.conversationItems.count > 3 {
-							SearchField(searchText: $chatViewManager.searchText)
-								.padding(.horizontal)
-								.padding(.top)
-								.padding(.bottom, 8)
-								.frame(maxWidth: geometry.size.width * 0.7)
-						}
-						HStack(alignment: .top, spacing: 0) {
-							ConversationsScrollView(chatViewManager: chatViewManager,
-													conversationItems: chatViewManager.conversationItems,
-													highlightedText: $highlightedText,
-													scrollViewProxy: $scrollViewProxy,
-													isThreadView: false,
-													side: .left)
-							.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
-							.environment(\.customWidths, [.left: leftViewWidth])
-							.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
-								if let scrollViewProxy = scrollViewProxy {
-									scrollToBottom(proxy: scrollViewProxy)
-								}
+					HStack(alignment: .top, spacing: 0) {
+						ConversationsScrollView(chatViewManager: chatViewManager,
+												conversationItems: chatViewManager.conversationItems,
+												highlightedText: $highlightedText,
+												scrollViewProxy: $scrollViewProxy,
+												isThreadView: false,
+												side: .left)
+						.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
+						.environment(\.customWidths, [.left: leftViewWidth])
+						.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
+							if let scrollViewProxy = scrollViewProxy {
+								scrollToBottom(proxy: scrollViewProxy)
 							}
-							
-							if chatViewManager.showThreadView,
-							   let threadManager = chatViewManager.getThreadManager() {
-								DividerView()
-									.frame(width: 4)
-									.background(Color.gray)
-									.gesture(
-										DragGesture()
-											.onChanged { value in
-												let translation = value.translation.width
-												let totalWidth = geometry.size.width
-												
-												// Adjust left and right view widths proportionally
-												let newLeftWidth = leftViewWidth + translation
-												let newRightWidth = rightViewWidth - translation
-												
-												// Set minimum and maximum constraints
-												let minWidth = totalWidth * 0.3
-												let maxWidth = totalWidth * 0.7
-												
-												// Ensure views stay within constraints
-												if newLeftWidth >= minWidth && newLeftWidth <= maxWidth &&
-													newRightWidth >= minWidth && newRightWidth <= maxWidth {
-													leftViewWidth = newLeftWidth
-													rightViewWidth = newRightWidth
-												}
+						}
+						
+						if chatViewManager.showThreadView,
+						   let threadManager = chatViewManager.getThreadManager() {
+							DividerView()
+								.frame(width: 4)
+								.background(Color.gray)
+								.gesture(
+									DragGesture()
+										.onChanged { value in
+											let translation = value.translation.width
+											let totalWidth = geometry.size.width
+											
+											// Adjust left and right view widths proportionally
+											let newLeftWidth = leftViewWidth + translation
+											let newRightWidth = rightViewWidth - translation
+											
+											// Set minimum and maximum constraints
+											let minWidth = totalWidth * 0.3
+											let maxWidth = totalWidth * 0.7
+											
+											// Ensure views stay within constraints
+											if newLeftWidth >= minWidth && newLeftWidth <= maxWidth &&
+												newRightWidth >= minWidth && newRightWidth <= maxWidth {
+												leftViewWidth = newLeftWidth
+												rightViewWidth = newRightWidth
 											}
-									)
-								ThreadView(chatViewManager: chatViewManager,
-										   threadViewManager: threadManager)
-								.frame(width: rightViewWidth)
-								.environment(\.customWidths, [.right: rightViewWidth])
-							}
+										}
+								)
+							ThreadView(chatViewManager: chatViewManager,
+									   threadViewManager: threadManager)
+							.frame(width: rightViewWidth)
+							.environment(\.customWidths, [.right: rightViewWidth])
 						}
-						.onAppear {
-							DispatchQueue.main.async {
-								totalWidth = geometry.size.width
-								leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
-																			 showThreadView: chatViewManager.showThreadView)
-								rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
-							}
-						}
-						.onChange(of: chatViewManager.showThreadView) { _, newValue in
+					}
+					.onAppear {
+						DispatchQueue.main.async {
+							totalWidth = geometry.size.width
 							leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
-																		 showThreadView: newValue)
+																		 showThreadView: chatViewManager.showThreadView)
 							rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
 						}
 					}
-					.background(.white)
+					.onChange(of: chatViewManager.showThreadView) { _, newValue in
+						leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
+																	 showThreadView: newValue)
+						rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
+					}
+					.background(Color(NSColor.windowBackgroundColor))
 					if chatViewManager.showAIExplanationView {
 							Color.black.opacity(0.3)
 								.edgesIgnoringSafeArea(.all)
@@ -114,11 +105,13 @@ struct ChatView: View {
 				}
 				
 				if chatViewManager.conversationItems.count > 3 {
-					PromptsSidebarView(conversationItems: chatViewManager.conversationItems,
-									   selectedPromptIndex: chatViewManager.selectedPromptIndex,
-									   geometry: geometry,
-									   onSelectedItem: { onSelectedItem($0.id) })
-					.frame(width: geometry.size.width * 0.2)
+					withAnimation {
+						PromptsSidebarView(conversationItems: chatViewManager.conversationItems,
+										   selectedPromptIndex: chatViewManager.selectedPromptIndex,
+										   geometry: geometry,
+										   onSelectedItem: { onSelectedItem($0.id) })
+						.frame(width: geometry.size.width * 0.2)
+					}
 				}
 			}
 		}

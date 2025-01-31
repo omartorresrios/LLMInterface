@@ -68,7 +68,10 @@ struct ConversationsScrollView: View {
 													 conversationItem: conversationItem,
 													 isThreadView: isThreadView,
 													 side: side,
-													 removePrompt: removeConversationItem)
+													 removePrompt: removeConversationItem,
+													 scrollToSelectedItem: { id in 
+									scrollToSelectedItem(in: scrollViewProxy, to: id) }
+								)
 								.id(conversationItem.id)
 							}
 						}
@@ -103,6 +106,16 @@ struct ConversationsScrollView: View {
 		}
 		.onChange(of: disablePromptEntry) { _, newValue in
 			isFocused = !newValue
+		}
+	}
+	
+	private func scrollToSelectedItem(in scrollProxy: ScrollViewProxy?, to id: String) {
+		if let currentSelectedConversationItemId = chatViewManager.currentOpenedConversationItemId {
+			DispatchQueue.main.async {
+				withAnimation {
+					scrollProxy?.scrollTo(currentSelectedConversationItemId, anchor: .top)
+				}
+			}
 		}
 	}
 	

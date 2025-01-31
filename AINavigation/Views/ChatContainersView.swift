@@ -72,7 +72,18 @@ struct ChatContainersView: View {
 					.frame(width: geometry.size.width * 0.2)
 					Divider()
 					if let chatViewManager = chatContainersManager.getSelectedChat() {
-						ChatView(chatViewManager: chatViewManager)
+						VStack {
+							if chatViewManager.conversationItems.count > 3 {
+								withAnimation {
+									SearchField(searchText: chatViewManager.searchText)
+										.padding(.horizontal)
+										.padding(.top)
+										.padding(.bottom, 8)
+										.frame(maxWidth: geometry.size.width * 0.7)
+								}
+							}
+							ChatView(chatViewManager: chatViewManager)
+						}
 					}
 				}
 //				if showEditModal.show {
