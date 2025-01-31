@@ -19,9 +19,6 @@ struct SearchField: View {
 			TextField("Search...", text: $searchText)
 				.textFieldStyle(.plain)
 				.font(.system(size: 14))
-				.onSubmit {
-					
-				}
 			
 			if !searchText.isEmpty {
 				Button(action: { searchText = "" }) {
@@ -31,9 +28,11 @@ struct SearchField: View {
 				.buttonStyle(PlainButtonStyle())
 			}
 		}
-		.padding(.horizontal, 6)
-		.padding(.vertical, 4)
-		.cornerRadius(6)
+		.padding(6)
+		.overlay(
+			RoundedRectangle(cornerRadius: 8)
+				.stroke(Color.gray, lineWidth: 0.5)
+		)
 	}
 }
 
@@ -72,18 +71,7 @@ struct ChatContainersView: View {
 					.frame(width: geometry.size.width * 0.2)
 					Divider()
 					if let chatViewManager = chatContainersManager.getSelectedChat() {
-						VStack {
-							if chatViewManager.conversationItems.count > 3 {
-								withAnimation {
-									SearchField(searchText: chatViewManager.searchText)
-										.padding(.horizontal)
-										.padding(.top)
-										.padding(.bottom, 8)
-										.frame(maxWidth: geometry.size.width * 0.7)
-								}
-							}
-							ChatView(chatViewManager: chatViewManager)
-						}
+						ChatView(chatViewManager: chatViewManager)
 					}
 				}
 //				if showEditModal.show {

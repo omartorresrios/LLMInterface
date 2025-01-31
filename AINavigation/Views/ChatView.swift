@@ -16,76 +16,61 @@ struct ChatView: View {
 	@State private var isAnimating = false//To-do We are not using it currently. See if we can use for some validation
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
-	@State private var leftViewWidth: CGFloat = 0
 	@State private var totalWidth: CGFloat = 0
-	@State private var rightViewWidth: CGFloat = 0
 	
 	var body: some View {
 		GeometryReader { geometry in
 			ZStack(alignment: .leading) {
-				ZStack {
-					HStack(alignment: .top, spacing: 0) {
+				ZStack(alignment: .trailing) {
+					VStack(alignment: .leading, spacing: 0) {
+						if chatViewManager.conversationItems.count > 3 {
+							withAnimation {
+								SearchField(searchText: $chatViewManager.searchText)
+									.padding(.horizontal)
+									.padding(.top)
+									.padding(.bottom, 8)
+									.frame(maxWidth: (geometry.size.width * 0.8) / 2)
+							}
+						}
+						
 						ConversationsScrollView(chatViewManager: chatViewManager,
 												conversationItems: chatViewManager.conversationItems,
 												highlightedText: $highlightedText,
 												scrollViewProxy: $scrollViewProxy,
 												isThreadView: false,
 												side: .left)
-						.frame(idealWidth: leftViewWidth, maxWidth: .infinity)
-						.environment(\.customWidths, [.left: leftViewWidth])
+						.frame(maxWidth: .infinity)
+						.background(Color(NSColor.windowBackgroundColor))
+						.environment(\.width, geometry.size.width)
 						.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
 							if let scrollViewProxy = scrollViewProxy {
 								scrollToBottom(proxy: scrollViewProxy)
 							}
 						}
-						
-						if chatViewManager.showThreadView,
-						   let threadManager = chatViewManager.getThreadManager() {
-							DividerView()
-								.frame(width: 4)
-								.background(Color.gray)
-								.gesture(
-									DragGesture()
-										.onChanged { value in
-											let translation = value.translation.width
-											let totalWidth = geometry.size.width
-											
-											// Adjust left and right view widths proportionally
-											let newLeftWidth = leftViewWidth + translation
-											let newRightWidth = rightViewWidth - translation
-											
-											// Set minimum and maximum constraints
-											let minWidth = totalWidth * 0.3
-											let maxWidth = totalWidth * 0.7
-											
-											// Ensure views stay within constraints
-											if newLeftWidth >= minWidth && newLeftWidth <= maxWidth &&
-												newRightWidth >= minWidth && newRightWidth <= maxWidth {
-												leftViewWidth = newLeftWidth
-												rightViewWidth = newRightWidth
-											}
-										}
+					}
+				
+					if chatViewManager.showThreadView,
+					   let threadManager = chatViewManager.getThreadManager() {
+						ThreadView(chatViewManager: chatViewManager,
+								   threadViewManager: threadManager)
+						.frame(width: geometry.size.width / 2)
+						.background(Color(NSColor.windowBackgroundColor))
+						.cornerRadius(6)
+							.shadow(
+								color: .black.opacity(0.2),
+								radius: 8,
+								x: -4, // Negative x to place shadow on the left
+								y: 2
+							)
+							.compositingGroup()
+							.transition(
+								.asymmetric(
+									insertion: .move(edge: .trailing).combined(with: .opacity),
+									removal: .move(edge: .trailing).combined(with: .opacity)
 								)
-							ThreadView(chatViewManager: chatViewManager,
-									   threadViewManager: threadManager)
-							.frame(width: rightViewWidth)
-							.environment(\.customWidths, [.right: rightViewWidth])
-						}
+							)
 					}
-					.onAppear {
-						DispatchQueue.main.async {
-							totalWidth = geometry.size.width
-							leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
-																		 showThreadView: chatViewManager.showThreadView)
-							rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
-						}
-					}
-					.onChange(of: chatViewManager.showThreadView) { _, newValue in
-						leftViewWidth = conversationsScrollViewWidth(with: totalWidth,
-																	 showThreadView: newValue)
-						rightViewWidth = threadViewConversationsScrollViewWidth(with: totalWidth)
-					}
-					.background(Color(NSColor.windowBackgroundColor))
+					
 					if chatViewManager.showAIExplanationView {
 							Color.black.opacity(0.3)
 								.edgesIgnoringSafeArea(.all)
@@ -129,16 +114,6 @@ struct ChatView: View {
 		chatViewManager.resetAIExplainItem()
 		displayedText = ""
 		stopAnimation()
-	}
-	
-	private func conversationsScrollViewWidth(with geometryWidth: CGFloat, showThreadView: Bool) -> CGFloat {
-		let threadViewWidth = showThreadView ? geometryWidth * 0.3 : 0
-		return geometryWidth - threadViewWidth
-	}
-	
-	private func threadViewConversationsScrollViewWidth(with geometryWidth: CGFloat) -> CGFloat {
-		let conversationsScrollViewWidth = geometryWidth * 0.7
-		return geometryWidth - conversationsScrollViewWidth
 	}
 	
 	private func startAnimation() {

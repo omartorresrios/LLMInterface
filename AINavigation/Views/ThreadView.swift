@@ -104,7 +104,9 @@ struct ThreadView: View {
 	var body: some View {
 		VStack(alignment: .leading) {
 			Button {
-				chatViewManager.toggleThreadView()
+				withAnimation(.easeInOut(duration: 0.3)) {
+					chatViewManager.toggleThreadView()
+				}
 			} label: {
 				Image(systemName: "arrow.right")
 			}

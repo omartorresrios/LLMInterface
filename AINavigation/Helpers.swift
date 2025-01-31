@@ -13,11 +13,11 @@ enum ViewSide: String {
 }
 
 struct WidthKey: EnvironmentKey {
-	static let defaultValue: [ViewSide: CGFloat] = [:]
+	static let defaultValue: CGFloat = 0.0
 }
 
 extension EnvironmentValues {
-	var customWidths: [ViewSide: CGFloat] {
+	var width: CGFloat {
 		get { self[WidthKey.self] }
 		set { self[WidthKey.self] = newValue }
 	}

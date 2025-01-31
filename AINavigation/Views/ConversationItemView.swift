@@ -194,7 +194,7 @@ struct TextEditor: NSViewRepresentable {
 }
 
 struct ConversationItemView: View {
-	@Environment(\.customWidths) private var widths: [ViewSide: CGFloat]
+	@Environment(\.width) private var width: CGFloat
 	@Bindable var conversationItemManager: ConversationItemViewManager
 	@Bindable var chatViewManager: ChatViewManager
 	@Binding var highlightedText: String
@@ -264,7 +264,7 @@ struct ConversationItemView: View {
 				}
 				if let font  = NSFont(name: "Helvetica Neue", size: 16) {
 					hasMoreThanTwoLines = countLines(in: newValue,
-													 width: (widths[side] ?? 0.0) - 40,
+													 width: width - 40,
 													 font: font) > 20
 				}
 			}
@@ -332,13 +332,11 @@ struct ConversationItemView: View {
 						.stroke(Color.blue, lineWidth: 1)
 				)
 				.onTapGesture {
-					DispatchQueue.main.async {
-						withAnimation(.easeInOut(duration: 0.1)) {
-							chatViewManager.toggleThreadView()
-							chatViewManager.currentOpenedConversationItemId = conversationItem.id
-							chatViewManager.setThreadManager(for: conversationItem)
-							scrollToSelectedItem(conversationItem.id)
-						}
+					withAnimation(.easeInOut(duration: 0.3)) {
+						chatViewManager.toggleThreadView()
+						chatViewManager.currentOpenedConversationItemId = conversationItem.id
+						chatViewManager.setThreadManager(for: conversationItem)
+						scrollToSelectedItem(conversationItem.id)
 					}
 				}
 				.disabled(chatViewManager.showThreadView)
@@ -367,15 +365,15 @@ struct ConversationItemView: View {
 					   conversationItemViewManager: conversationItemManager,
 					   conversationItem: conversationItem,
 					   text: displayedText,
-					   width: (widths[side] ?? 0.0) - 64,
+					   width: width - 64,
 					   height: $textEditorHeight,
 					   textView: $textView)
 			.frame(height: textEditorHeight)
 			if !conversationItemManager.isExpanded {
 				LinearGradient(
 					gradient: Gradient(colors: [
-						Color.white.opacity(0),
-						Color.white
+						Color(NSColor.windowBackgroundColor).opacity(0),
+						Color(NSColor.windowBackgroundColor)
 					]),
 					startPoint: .top,
 					endPoint: .bottom
