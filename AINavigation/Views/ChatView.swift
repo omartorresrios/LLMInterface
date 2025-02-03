@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct ChatView: View {
+	@Environment(\.chatsWidth) private var chatsSidebarWidth: CGFloat
 	@Binding var chatViewManager: ChatViewManager
 	@State private var scrollViewProxy: ScrollViewProxy?
 	@FocusState private var isFocused: Bool
 	@State var highlightedText = ""
 	@State private var displayedText = ""
 	@State private var isAnimating = false//To-do We are not using it currently. See if we can use for some validation
+	@State private var showSidebar = false
 	@State private var currentIndex = 0
 	@State private var timer: Timer?
 	@State private var totalWidth: CGFloat = 0
@@ -89,16 +91,34 @@ struct ChatView: View {
 					}
 				}
 				
-				if chatViewManager.conversationItems.count > 3 {
-					withAnimation {
-						PromptsSidebarView(conversationItems: chatViewManager.conversationItems,
-										   selectedPromptIndex: chatViewManager.selectedPromptIndex,
-										   geometry: geometry,
-										   onSelectedItem: { onSelectedItem($0.id) })
-						.frame(width: geometry.size.width * 0.2)
-					}
+				if  showSidebar {
+					PromptsSidebarView(conversationItems: chatViewManager.conversationItems,
+									   selectedPromptIndex: chatViewManager.selectedPromptIndex,
+									   geometry: geometry,
+									   onSelectedItem: { onSelectedItem($0.id) })
+					.frame(width: geometry.size.width * 0.2)
+					.cornerRadius(6)
+					.shadow(color: .black.opacity(0.2), radius: 8, x: 4, y: 0)
 				}
 			}
+			.onChange(of: chatsSidebarWidth) { _, newValue in
+				startMouseTracking(geometry, newValue)
+			}
+		}
+	}
+	
+	private func startMouseTracking(_ geometry: GeometryProxy,
+									_ chatsSidebarWidth: CGFloat) {
+		NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { event in
+			let adjustedX = event.locationInWindow.x - chatsSidebarWidth
+			withAnimation(.easeInOut(duration: 0.2)) {
+				if adjustedX < 20 && adjustedX > 0 {
+					showSidebar = true
+				} else if adjustedX > geometry.size.width * 0.2 {
+					showSidebar = false
+				}
+			}
+			return event
 		}
 	}
 	
@@ -176,38 +196,21 @@ struct PromptsSidebarView: View {
 	var onSelectedItem: (ConversationItem) -> Void
 	
 	var body: some View {
-		ZStack {
-			if showPrompts {
-				VStack(alignment: .leading) {
-					Text("Prompts")
-						.font(.headline)
-					ForEach(conversationItems, id: \.id) { conversationItem in
-						Button(action: {
-							onSelectedItem(conversationItem)
-						}) {
-							Text(conversationItem.prompt)
-								.foregroundColor(selectedPromptIndex == conversationItems.firstIndex(where: { $0.id == conversationItem.id }) ? .blue : .primary)
-						}
-					}
+		VStack(alignment: .leading) {
+			Text("Prompts")
+				.font(.headline)
+			ForEach(conversationItems, id: \.id) { conversationItem in
+				Button(action: {
+					onSelectedItem(conversationItem)
+				}) {
+					Text(conversationItem.prompt)
+						.foregroundColor(selectedPromptIndex == conversationItems.firstIndex(where: { $0.id == conversationItem.id }) ? .blue : .primary)
 				}
-				.padding(8)
-				.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-				.background(.blue)
-				.transition(.move(edge: .leading))
 			}
-			
-			Rectangle()
-				.fill(.green)
-				.frame(width: 20, height: 40)
-				.position(x: showPrompts ? geometry.size.width * 0.2 : 0,
-						  y: geometry.size.height / 2)
-				.onTapGesture {
-					withAnimation(.easeInOut(duration: 0.1)) {
-						showPrompts.toggle()
-					}
-				}
 		}
-		.clipped()
+		.padding(8)
+		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+		.background(Color(NSColor.windowBackgroundColor))
 	}
 }
 

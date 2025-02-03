@@ -16,9 +16,18 @@ struct WidthKey: EnvironmentKey {
 	static let defaultValue: CGFloat = 0.0
 }
 
+struct ChatsWidthKey: EnvironmentKey {
+	static let defaultValue: CGFloat = 0.0
+}
+
 extension EnvironmentValues {
 	var width: CGFloat {
 		get { self[WidthKey.self] }
 		set { self[WidthKey.self] = newValue }
+	}
+	
+	var chatsWidth: CGFloat {
+		get { self[ChatsWidthKey.self] }
+		set { self[ChatsWidthKey.self] = newValue }
 	}
 }

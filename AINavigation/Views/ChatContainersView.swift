@@ -74,6 +74,7 @@ struct ChatContainersView: View {
 						ChatView(chatViewManager: chatViewManager)
 					}
 				}
+				.environment(\.chatsWidth, geometry.size.width * 0.2)
 //				if showEditModal.show {
 //					Color.black.opacity(0.4)
 //						.edgesIgnoringSafeArea(.all)
