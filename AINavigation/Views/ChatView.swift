@@ -43,7 +43,7 @@ struct ChatView: View {
 												side: .left)
 						.frame(maxWidth: .infinity)
 						.background(Color(NSColor.windowBackgroundColor))
-						.environment(\.width, geometry.size.width)
+						.environment(\.customWidths, [.left: geometry.size.width])
 						.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
 							if let scrollViewProxy = scrollViewProxy {
 								scrollToBottom(proxy: scrollViewProxy)
@@ -56,6 +56,7 @@ struct ChatView: View {
 						ThreadView(chatViewManager: chatViewManager,
 								   threadViewManager: threadManager)
 						.frame(width: geometry.size.width / 2)
+						.environment(\.customWidths, [.right: geometry.size.width / 2])
 						.background(Color(NSColor.windowBackgroundColor))
 						.cornerRadius(6)
 							.shadow(

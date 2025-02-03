@@ -13,7 +13,7 @@ enum ViewSide: String {
 }
 
 struct WidthKey: EnvironmentKey {
-	static let defaultValue: CGFloat = 0.0
+	static let defaultValue: [ViewSide: CGFloat] = [:]
 }
 
 struct ChatsWidthKey: EnvironmentKey {
@@ -21,7 +21,7 @@ struct ChatsWidthKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-	var width: CGFloat {
+	var customWidths: [ViewSide: CGFloat] {
 		get { self[WidthKey.self] }
 		set { self[WidthKey.self] = newValue }
 	}

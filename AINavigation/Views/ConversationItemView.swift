@@ -194,7 +194,7 @@ struct TextEditor: NSViewRepresentable {
 }
 
 struct ConversationItemView: View {
-	@Environment(\.width) private var width: CGFloat
+	@Environment(\.customWidths) private var widths: [ViewSide: CGFloat]
 	@Bindable var conversationItemManager: ConversationItemViewManager
 	@Bindable var chatViewManager: ChatViewManager
 	@Binding var highlightedText: String
@@ -264,7 +264,7 @@ struct ConversationItemView: View {
 				}
 				if let font  = NSFont(name: "Helvetica Neue", size: 16) {
 					hasMoreThanTwoLines = countLines(in: newValue,
-													 width: width - 40,
+													 width: (widths[side] ?? 0.0) - 40,
 													 font: font) > 20
 				}
 			}
@@ -365,7 +365,7 @@ struct ConversationItemView: View {
 					   conversationItemViewManager: conversationItemManager,
 					   conversationItem: conversationItem,
 					   text: displayedText,
-					   width: width - 64,
+					   width: (widths[side] ?? 0.0) - 64,
 					   height: $textEditorHeight,
 					   textView: $textView)
 			.frame(height: textEditorHeight)
