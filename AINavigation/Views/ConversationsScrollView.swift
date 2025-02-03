@@ -75,7 +75,7 @@ struct ConversationsScrollView: View {
 								.id(conversationItem.id)
 							}
 						}
-						.padding(side == .left ? 16 : 0)
+						.padding([.leading, .top, .trailing], side == .left ? 16 : 0)
 					}
 					.onAppear {
 						scrollViewProxy = scrollProxy
@@ -89,7 +89,7 @@ struct ConversationsScrollView: View {
 									.background(.red)
 								}
 						}
-						.padding(.trailing)
+						.padding(.trailing, side == .left ? 16 : 0)
 					}
 				}
 				PromptInputView(sendPrompt: { prompt in
@@ -106,7 +106,7 @@ struct ConversationsScrollView: View {
 						chatViewManager.showThreadView = false
 					}
 				})
-				.padding(side == .left ? 16 : 0)
+				.padding([.leading, .bottom, .trailing], side == .left ? 16 : 0)
 			}
 		}
 		.onChange(of: disablePromptEntry) { _, newValue in

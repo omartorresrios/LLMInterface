@@ -243,16 +243,17 @@ struct ConversationItemView: View {
 		ZStack {
 			VStack(alignment: .leading) {
 				topButtonsView
-				
+					.padding(.top)
 				if conversationItem.outputStatus == .completed {
 					textEditorView
 				} else {
 					ProgressView()
-						.padding(.top, 8)
+						.padding(.bottom)
 				}
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
-			.padding()
+			.padding(.horizontal)
+			.background(.green.opacity(0.3))
 			.cornerRadius(8)
 			.onChange(of: conversationItem.output) { oldValue, newValue in
 				if !conversationItemManager.hasAnimatedOnce {
