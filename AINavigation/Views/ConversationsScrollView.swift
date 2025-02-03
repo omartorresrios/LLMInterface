@@ -100,7 +100,12 @@ struct ConversationsScrollView: View {
 					}
 				},
 								isFocused: _isFocused,
-								disablePromptEntry: disablePromptEntry)
+								disablePromptEntry: disablePromptEntry,
+								onTapGesture: {
+					withAnimation(.easeInOut(duration: 0.3)) {
+						chatViewManager.showThreadView = false
+					}
+				})
 				.padding(side == .left ? 16 : 0)
 			}
 		}

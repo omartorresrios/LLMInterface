@@ -12,6 +12,7 @@ struct PromptInputView: View {
 	var sendPrompt: (String) -> Void
 	@FocusState var isFocused: Bool
 	var disablePromptEntry: Bool
+	var onTapGesture: (() -> Void)? = nil
 	
 	var body: some View {
 		HStack {
@@ -26,6 +27,14 @@ struct PromptInputView: View {
 						}
 					}
 				}
+				.overlay(
+					Color.clear
+						.contentShape(Rectangle())
+						.onTapGesture {
+							isFocused = true
+							onTapGesture?()
+						}
+				)
 				.focused($isFocused)
 			
 			Button(action: {
