@@ -82,14 +82,31 @@ struct ConversationsScrollView: View {
 					}
 					.overlay(alignment: .bottomTrailing) {
 						Group {
-								if chatViewManager.conversationItemIsAnimating {
-								Text("Press enter to get the answer now")
-									.fontWeight(.bold)
-									.padding()
-									.background(.red)
+							if chatViewManager.conversationItemIsAnimating {
+								HStack(spacing: 4) {
+									Text("Press")
+										.fontWeight(.bold)
+										.foregroundStyle(Color(NSColor.windowBackgroundColor))
+									
+									Image("enter")
+										.resizable()
+										.renderingMode(.template)
+										.foregroundStyle(Color(NSColor.windowBackgroundColor))
+										.aspectRatio(contentMode: .fit)
+										.frame(width: 20, height: 20)
+										.clipped()
+									
+									Text("to get the answer right away")
+										.fontWeight(.bold)
+										.foregroundStyle(Color(NSColor.windowBackgroundColor))
 								}
+								.padding(8)
+								.background(.pink)
+								.clipShape(RoundedRectangle(cornerRadius: 6.0))
+							}
 						}
-						.padding(.trailing, side == .left ? 16 : 0)
+						.padding(.trailing, side == .left ? 32 : 16)
+						.padding([.bottom, .leading], side == .left ? 16 : 16)
 					}
 				}
 				PromptInputView(sendPrompt: { prompt in

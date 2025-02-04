@@ -58,7 +58,7 @@ struct ChatView: View {
 						.frame(width: geometry.size.width / 2)
 						.environment(\.customWidths, [.right: geometry.size.width / 2])
 						.background(Color(NSColor.windowBackgroundColor))
-						.cornerRadius(6)
+						.clipShape(RoundedRectangle(cornerRadius: 6.0))
 							.shadow(
 								color: .black.opacity(0.2),
 								radius: 8,
@@ -92,13 +92,13 @@ struct ChatView: View {
 					}
 				}
 				
-				if  showSidebar {
+				if showSidebar && chatViewManager.conversationItems.count > 3 {
 					PromptsSidebarView(conversationItems: chatViewManager.conversationItems,
 									   selectedPromptIndex: chatViewManager.selectedPromptIndex,
 									   geometry: geometry,
 									   onSelectedItem: { onSelectedItem($0.id) })
 					.frame(width: geometry.size.width * 0.2)
-					.cornerRadius(6)
+					.clipShape(RoundedRectangle(cornerRadius: 6.0))
 					.shadow(color: .black.opacity(0.2), radius: 8, x: 4, y: 0)
 				}
 			}

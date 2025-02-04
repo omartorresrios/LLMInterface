@@ -254,7 +254,7 @@ struct ConversationItemView: View {
 			.frame(maxWidth: .infinity, alignment: .leading)
 			.padding(.horizontal)
 			.background(.green.opacity(0.3))
-			.cornerRadius(8)
+			.clipShape(RoundedRectangle(cornerRadius: 8.0))
 			.onChange(of: conversationItem.output) { oldValue, newValue in
 				if !conversationItemManager.hasAnimatedOnce {
 					startAnimation()
