@@ -393,19 +393,30 @@ struct ConversationItemView: View {
 				chatViewManager.sendAIExplainPrompt(conversationItemManager.highlightedText)
 				chatViewManager.showAIExplanationView = true
 			}
-			.foregroundColor(.white)
+			.buttonStyle(.plain)
+			.frame(minWidth: 0, maxWidth: .infinity)
+			.padding(8)
+			.foregroundColor(Color(NSColor.windowBackgroundColor))
+			.background(Color.blue.opacity(0.5))
+			.clipShape(RoundedRectangle(cornerRadius: 8.0))
+			
 			Button("Open thread") {
 				chatViewManager.toggleThreadView()
 				chatViewManager.currentOpenedConversationItemId = conversationItem.id
 				chatViewManager.setThreadManager(for: conversationItem)
 				conversationItemManager.setAIExplainButton(false)
 			}
-			.foregroundColor(.white)
-			
+			.buttonStyle(.plain)
+			.frame(minWidth: 0, maxWidth: .infinity)
+			.padding(8)
+			.foregroundColor(Color(NSColor.windowBackgroundColor))
+			.background(Color.blue.opacity(0.5))
+			.clipShape(RoundedRectangle(cornerRadius: 8.0))
 		}
+		.fixedSize()
 		.padding(8)
-		.background(.red)
-		.cornerRadius(8)
+		.background(.gray)
+		.clipShape(RoundedRectangle(cornerRadius: 8.0))
 		.shadow(radius: 5)
 		.position(conversationItemManager.buttonPosition)
 		.onAppear {
