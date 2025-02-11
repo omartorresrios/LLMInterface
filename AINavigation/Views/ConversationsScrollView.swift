@@ -17,6 +17,7 @@ struct ConversationsScrollView: View {
 	var isThreadView: Bool
 	let side: ViewSide
 	var sendPrompt: ((String) -> Void)?
+	@Environment(\.colorScheme) var colorScheme
 	
 	init(chatViewManager: ChatViewManager,
 		 conversationItems: [ConversationItem],
@@ -32,6 +33,10 @@ struct ConversationsScrollView: View {
 		self.isThreadView = isThreadView
 		self.side = side
 		self.sendPrompt = sendPrompt
+	}
+	
+	private var inverseTextColor: Color {
+		colorScheme == .dark ? textColorLight : textColorDark
 	}
 	
 	var filteredItems: [ConversationItem] {
@@ -85,23 +90,24 @@ struct ConversationsScrollView: View {
 							if chatViewManager.conversationItemIsAnimating {
 								HStack(spacing: 4) {
 									Text("Press")
-										.fontWeight(.bold)
-										.foregroundStyle(Color(NSColor.windowBackgroundColor))
+										.font(normalFont)
+										.foregroundStyle(inverseTextColor)
 									
 									Image("enter")
 										.resizable()
 										.renderingMode(.template)
-										.foregroundStyle(Color(NSColor.windowBackgroundColor))
+										.foregroundStyle(inverseTextColor)
+										.fontWeight(.heavy)
 										.aspectRatio(contentMode: .fit)
-										.frame(width: 20, height: 20)
+										.frame(width: 18, height: 18)
 										.clipped()
 									
 									Text("to get the answer right away")
-										.fontWeight(.bold)
-										.foregroundStyle(Color(NSColor.windowBackgroundColor))
+										.font(normalFont)
+										.foregroundStyle(inverseTextColor)
 								}
 								.padding(8)
-								.background(.pink)
+								.background(buttonColor)
 								.clipShape(RoundedRectangle(cornerRadius: 6.0))
 							}
 						}

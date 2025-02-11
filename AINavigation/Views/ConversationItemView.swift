@@ -264,7 +264,7 @@ struct ConversationItemView: View {
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
 			.padding(.horizontal)
-			.background(Color(hex: "DFDBC1"))
+			.background(conversationItemBackgroundColor)
 			.clipShape(RoundedRectangle(cornerRadius: 8.0))
 			.onChange(of: conversationItem.output) { oldValue, newValue in
 				if !conversationItemManager.hasAnimatedOnce {
@@ -400,8 +400,8 @@ struct ConversationItemView: View {
 			if !conversationItemManager.isExpanded {
 				LinearGradient(
 					gradient: Gradient(colors: [
-						Color(NSColor.windowBackgroundColor).opacity(0),
-						Color(NSColor.windowBackgroundColor)
+						Color(conversationItemBackgroundColor).opacity(0),
+						Color(conversationItemBackgroundColor)
 					]),
 					startPoint: .top,
 					endPoint: .bottom

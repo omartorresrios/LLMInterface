@@ -65,7 +65,7 @@ final class ChatViewManager: Identifiable {
 		}
 
 		let payload: [String: Any] = [
-			"model": "llama3.2",
+			"model": "deepseek-v2:16b",
 			"messages": [
 				[
 					"role": "user",
