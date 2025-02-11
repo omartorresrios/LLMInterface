@@ -14,16 +14,26 @@ struct AIExplainView: View {
 	let maxWidth: CGFloat
 	let maxHeight: CGFloat
 	var closeView: () -> Void
+	@State private var isCloseButtonHovered = false
 	
     var body: some View {
 		VStack(alignment: .leading, spacing: 10) {
-			Button {
-				closeView()
-			} label: {
-				Image(systemName: "xmark.circle")
-			}
-			.buttonStyle(.plain)
-			.font(.system(size: 16))
+			Image(systemName: "xmark")
+				.foregroundColor(buttonDefaultColor)
+				.fontWeight(.semibold)
+				.font(.system(size: 10))
+				.frame(width: 20, height: 20)
+				.background(
+					Circle()
+						.stroke(isCloseButtonHovered ? buttonColor : buttonBorderColor.opacity(0.7), lineWidth: 2)
+				)
+				.contentShape(Circle())
+				.onHover { isHovering in
+					isCloseButtonHovered = isHovering
+				}
+				.onTapGesture {
+					closeView()
+				}
 			VStack(alignment: .leading) {
 				Text("Explaining: \(subjectToExplainText)")
 					.fontWeight(.bold)
@@ -39,7 +49,6 @@ struct AIExplainView: View {
 						VStack {
 							Text(attributedString ?? "")
 						}
-						.padding()
 					}
 				}
 			}

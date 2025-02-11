@@ -75,21 +75,38 @@ struct ConversationsScrollView: View {
 								.id(conversationItem.id)
 							}
 						}
-						.padding(side == .left ? 16 : 0)
+						.padding([.leading, .top, .trailing], side == .left ? 16 : 0)
 					}
 					.onAppear {
 						scrollViewProxy = scrollProxy
 					}
 					.overlay(alignment: .bottomTrailing) {
 						Group {
-								if chatViewManager.conversationItemIsAnimating {
-								Text("Press enter to get the answer now")
-									.fontWeight(.bold)
-									.padding()
-									.background(.red)
+							if chatViewManager.conversationItemIsAnimating {
+								HStack(spacing: 4) {
+									Text("Press")
+										.fontWeight(.bold)
+										.foregroundStyle(Color(NSColor.windowBackgroundColor))
+									
+									Image("enter")
+										.resizable()
+										.renderingMode(.template)
+										.foregroundStyle(Color(NSColor.windowBackgroundColor))
+										.aspectRatio(contentMode: .fit)
+										.frame(width: 20, height: 20)
+										.clipped()
+									
+									Text("to get the answer right away")
+										.fontWeight(.bold)
+										.foregroundStyle(Color(NSColor.windowBackgroundColor))
 								}
+								.padding(8)
+								.background(.pink)
+								.clipShape(RoundedRectangle(cornerRadius: 6.0))
+							}
 						}
-						.padding(.trailing)
+						.padding(.trailing, side == .left ? 32 : 16)
+						.padding([.bottom, .leading], side == .left ? 16 : 16)
 					}
 				}
 				PromptInputView(sendPrompt: { prompt in
@@ -100,8 +117,13 @@ struct ConversationsScrollView: View {
 					}
 				},
 								isFocused: _isFocused,
-								disablePromptEntry: disablePromptEntry)
-				.padding(side == .left ? 16 : 0)
+								disablePromptEntry: disablePromptEntry,
+								onTapGesture: {
+					withAnimation(.easeInOut(duration: 0.3)) {
+						chatViewManager.showThreadView = false
+					}
+				})
+				.padding([.leading, .bottom, .trailing], side == .left ? 16 : 0)
 			}
 		}
 		.onChange(of: disablePromptEntry) { _, newValue in

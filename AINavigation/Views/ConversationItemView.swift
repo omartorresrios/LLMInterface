@@ -80,7 +80,7 @@ struct TextEditor: NSViewRepresentable {
 		textView.backgroundColor = .clear
 		textView.drawsBackground = true
 		textView.isRichText = true
-		textView.font = NSFont(name: "HelveticaNeue", size: 14) ?? .systemFont(ofSize: 14)
+		textView.font = outputFont
 		textView.textContainer?.lineFragmentPadding = 0
 		textView.textContainer?.widthTracksTextView = true
 		textView.isHorizontallyResizable = false
@@ -131,7 +131,7 @@ struct TextEditor: NSViewRepresentable {
 				let header = NSAttributedString(
 					string: "\(headerText)\n",
 					attributes: [
-						.font: NSFont(name: "HelveticaNeue-Bold", size: 24) ?? .systemFont(ofSize: 24, weight: .bold)
+						.font: headerTextFont ?? .systemFont(ofSize: 24, weight: .bold)
 					]
 				)
 				attributedString.append(header)
@@ -140,7 +140,7 @@ struct TextEditor: NSViewRepresentable {
 				let subHeader = NSAttributedString(
 					string: "\(subHeaderText)\n",
 					attributes: [
-						.font: NSFont(name: "HelveticaNeue-Medium", size: 20) ?? .systemFont(ofSize: 20, weight: .semibold)
+						.font: subHeaderTextFont ?? .systemFont(ofSize: 20, weight: .semibold)
 					]
 				)
 				attributedString.append(subHeader)
@@ -149,7 +149,7 @@ struct TextEditor: NSViewRepresentable {
 				let bulletPoint = NSAttributedString(
 					string: "• \(bulletPointText)\n",
 					attributes: [
-						.font: NSFont(name: "HelveticaNeue", size: 14) ?? .systemFont(ofSize: 14)
+						.font: outputFont ?? .systemFont(ofSize: 15)
 					]
 				)
 				attributedString.append(bulletPoint)
@@ -158,7 +158,7 @@ struct TextEditor: NSViewRepresentable {
 				let paragraph = applyBoldStyle(to: String(line))
 				attributedString.append(paragraph)
 				attributedString.append(NSAttributedString(string: "\n", attributes: [
-					.font: NSFont(name: "HelveticaNeue", size: 14) ?? .systemFont(ofSize: 14)]))
+					.font: outputFont ?? .systemFont(ofSize: 15)]))
 			}
 		}
 
@@ -167,7 +167,7 @@ struct TextEditor: NSViewRepresentable {
 	
 	private func applyBoldStyle(to text: String) -> NSAttributedString {
 		let attributedString = NSMutableAttributedString(string: text, attributes: [
-			.font: NSFont(name: "Helvetica Neue", size: 14) ?? .systemFont(ofSize: 14)])
+			.font: outputFont ?? .systemFont(ofSize: 15)])
 
 		// Regex pattern for bold (**text**)
 		let boldPattern = "\\*\\*(.*?)\\*\\*"
@@ -182,7 +182,7 @@ struct TextEditor: NSViewRepresentable {
 				let boldText = (text as NSString).substring(with: capturedRange)
 				let boldAttributedString = NSAttributedString(
 					string: boldText,
-					attributes: [.font: NSFont(name: "HelveticaNeue-Bold", size: 14) ?? .boldSystemFont(ofSize: 14)]
+					attributes: [.font: boldTextFont ?? .boldSystemFont(ofSize: 15)]
 				)
 
 				// Replace the entire match range (including ** **) with the styled bold text
@@ -212,6 +212,17 @@ struct ConversationItemView: View {
 	var side: ViewSide
 	var removePrompt: (String) -> Void
 	var scrollToSelectedItem: (String) -> Void
+	@Environment(\.colorScheme) var colorScheme
+	@State private var isThreadButtonHovered = false
+	@State private var isTrashButtonHovered = false
+	
+	private var textColor: Color {
+		colorScheme == .dark ? textColorDark : textColorLight
+	}
+	
+	private var inverseTextColor: Color {
+		colorScheme == .dark ? textColorLight : textColorDark
+	}
 	
 	init(chatViewManager: ChatViewManager,
 		 conversationItemManager: ConversationItemViewManager,
@@ -243,17 +254,18 @@ struct ConversationItemView: View {
 		ZStack {
 			VStack(alignment: .leading) {
 				topButtonsView
-				
+					.padding(.top)
 				if conversationItem.outputStatus == .completed {
 					textEditorView
 				} else {
 					ProgressView()
-						.padding(.top, 8)
+						.padding(.bottom)
 				}
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
-			.padding()
-			.cornerRadius(8)
+			.padding(.horizontal)
+			.background(Color(hex: "DFDBC1"))
+			.clipShape(RoundedRectangle(cornerRadius: 8.0))
 			.onChange(of: conversationItem.output) { oldValue, newValue in
 				if !conversationItemManager.hasAnimatedOnce {
 					startAnimation()
@@ -262,7 +274,7 @@ struct ConversationItemView: View {
 					displayedText = newValue
 					currentIndex = newValue.count
 				}
-				if let font  = NSFont(name: "Helvetica Neue", size: 16) {
+				if let font = outputFont {
 					hasMoreThanTwoLines = countLines(in: newValue,
 													 width: (widths[side] ?? 0.0) - 40,
 													 font: font) > 20
@@ -304,7 +316,8 @@ struct ConversationItemView: View {
 	private var topButtonsView: some View {
 		HStack {
 			Text(conversationItem.prompt)
-				.font(.custom("HelveticaNeue", size: 18))
+				.textSelection(.enabled)
+				.font(promptFont)
 				.bold()
 			if hasMoreThanTwoLines && !isAnimating {
 				Button {
@@ -319,43 +332,56 @@ struct ConversationItemView: View {
 			if !isThreadView {
 				HStack(spacing: 4) {
 					Image(systemName: "arrow.triangle.branch")
-						.foregroundColor(.red)
+						.foregroundColor(buttonDefaultColor)
+						.fontWeight(.semibold)
+						.font(.system(size: 14))
 					Text("\(chatViewManager.threadConversationsCount(conversationItem.id)) prompts")
-						.font(.system(size: 12))
+						.font(buttonTextFont)
+						.foregroundStyle(buttonDefaultColor)
 				}
 				.padding(.horizontal, 6)
-				.padding(.vertical, 2)
-				.background(Color.blue.opacity(0.2))
+				.padding(.vertical, 4)
 				.cornerRadius(8)
 				.overlay(
-					RoundedRectangle(cornerRadius: 8)
-						.stroke(Color.blue, lineWidth: 1)
+					RoundedRectangle(cornerRadius: 20)
+						.stroke(isThreadButtonHovered ? buttonColor : buttonBorderColor.opacity(0.7), lineWidth: 2)
 				)
+				.onHover { isHovered in
+					self.isThreadButtonHovered = isHovered
+				}
 				.onTapGesture {
-					DispatchQueue.main.async {
-						withAnimation(.easeInOut(duration: 0.1)) {
-							chatViewManager.toggleThreadView()
-							chatViewManager.currentOpenedConversationItemId = conversationItem.id
-							chatViewManager.setThreadManager(for: conversationItem)
-							scrollToSelectedItem(conversationItem.id)
-						}
+					withAnimation(.easeInOut(duration: 0.3)) {
+						chatViewManager.toggleThreadView()
+						chatViewManager.currentOpenedConversationItemId = conversationItem.id
+						chatViewManager.setThreadManager(for: conversationItem)
+						scrollToSelectedItem(conversationItem.id)
 					}
 				}
 				.disabled(chatViewManager.showThreadView)
 				
-				Button {
-					removePrompt(conversationItem.id)
-					if let textView = textView {
-						chatViewManager.unregister(textView)
+				Image(systemName: "trash")
+					.foregroundColor(buttonDefaultColor)
+					.fontWeight(.semibold)
+					.font(.system(size: 14))
+					.frame(width: 28, height: 28)
+					.background(
+						Circle()
+							.stroke(isTrashButtonHovered ? buttonColor : buttonBorderColor.opacity(0.7), lineWidth: 2)
+					)
+					.contentShape(Circle())
+					.onHover { isHovering in
+						isTrashButtonHovered = isHovering
 					}
-					// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
-					if chatViewManager.showAIExplanationView {
-						chatViewManager.showAIExplanationView.toggle()
+					.onTapGesture {
+						removePrompt(conversationItem.id)
+						if let textView = textView {
+							chatViewManager.unregister(textView)
+						}
+						// TO-DO: WE SHOULD NOT BE ABLE TO DO THIS. IF AIEXPLANATIONVIEW IS SHOWN, THIS BUTTON SHOULD BE DISABLED
+						if chatViewManager.showAIExplanationView {
+							chatViewManager.showAIExplanationView.toggle()
+						}
 					}
-				} label: {
-					Image(systemName: "trash")
-						.foregroundColor(.red)
-				}
 			}
 		}
 		.disabled(disableWhileActions)
@@ -374,8 +400,8 @@ struct ConversationItemView: View {
 			if !conversationItemManager.isExpanded {
 				LinearGradient(
 					gradient: Gradient(colors: [
-						Color.white.opacity(0),
-						Color.white
+						Color(NSColor.windowBackgroundColor).opacity(0),
+						Color(NSColor.windowBackgroundColor)
 					]),
 					startPoint: .top,
 					endPoint: .bottom
@@ -394,19 +420,32 @@ struct ConversationItemView: View {
 				chatViewManager.sendAIExplainPrompt(conversationItemManager.highlightedText)
 				chatViewManager.showAIExplanationView = true
 			}
-			.foregroundColor(.white)
+			.buttonStyle(.plain)
+			.frame(minWidth: 0, maxWidth: .infinity)
+			.padding(8)
+			.foregroundColor(inverseTextColor)
+			.font(buttonTextFont)
+			.background(buttonColor)
+			.clipShape(RoundedRectangle(cornerRadius: 8.0))
+			
 			Button("Open thread") {
 				chatViewManager.toggleThreadView()
 				chatViewManager.currentOpenedConversationItemId = conversationItem.id
 				chatViewManager.setThreadManager(for: conversationItem)
 				conversationItemManager.setAIExplainButton(false)
 			}
-			.foregroundColor(.white)
-			
+			.buttonStyle(.plain)
+			.frame(minWidth: 0, maxWidth: .infinity)
+			.padding(8)
+			.foregroundColor(inverseTextColor)
+			.font(buttonTextFont)
+			.background(buttonColor)
+			.clipShape(RoundedRectangle(cornerRadius: 8.0))
 		}
+		.fixedSize()
 		.padding(8)
-		.background(.red)
-		.cornerRadius(8)
+		.background(.gray)
+		.clipShape(RoundedRectangle(cornerRadius: 8.0))
 		.shadow(radius: 5)
 		.position(conversationItemManager.buttonPosition)
 		.onAppear {
