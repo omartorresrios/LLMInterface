@@ -42,7 +42,6 @@ struct ChatView: View {
 												isThreadView: false,
 												side: .left)
 						.frame(maxWidth: .infinity)
-						.background(Color(NSColor.windowBackgroundColor))
 						.environment(\.customWidths, [.left: geometry.size.width])
 						.onChange(of: chatViewManager.conversationItems.count) { _, newValue in
 							if let scrollViewProxy = scrollViewProxy {
@@ -73,24 +72,27 @@ struct ChatView: View {
 								)
 							)
 					}
-					
-					if chatViewManager.showAIExplanationView {
-							Color.black.opacity(0.3)
-								.edgesIgnoringSafeArea(.all)
-						AIExplainView(subjectToExplainText: highlightedText,
-									  outputText: displayedText,
-									  AIExplainItemIsPending: chatViewManager.AIExplainItem.outputStatus == .pending,
-									  maxWidth: geometry.size.width * 0.5,
-									  maxHeight: geometry.size.height * 0.8,
-									  closeView: closeAIExplainViewAction)
-						.onAppear {
-							startAnimation()
-						}
-						.onChange(of: chatViewManager.AIExplainItem) { _, _ in
-							startAnimation()
-						}
-					}
 				}
+				.overlay(
+					Group {
+						if chatViewManager.showAIExplanationView {
+							Color.black.opacity(0.3)
+							.edgesIgnoringSafeArea(.all)
+							AIExplainView(subjectToExplainText: highlightedText,
+										  outputText: displayedText,
+										  AIExplainItemIsPending: chatViewManager.AIExplainItem.outputStatus == .pending,
+										  maxWidth: geometry.size.width * 0.5,
+										  maxHeight: geometry.size.height * 0.8,
+										  closeView: closeAIExplainViewAction)
+							.onAppear {
+								startAnimation()
+							}
+							.onChange(of: chatViewManager.AIExplainItem) { _, _ in
+								startAnimation()
+							}
+						}
+					}, alignment: .center
+				)
 				
 				if showSidebar && chatViewManager.conversationItems.count > 3 {
 					PromptsSidebarView(conversationItems: chatViewManager.conversationItems,

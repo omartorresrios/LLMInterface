@@ -94,6 +94,7 @@ struct ThreadView: View {
 	@Bindable var chatViewManager: ChatViewManager
 	@Bindable var threadViewManager: ThreadViewManager
 	@State var highlightedText = ""
+	@State private var isBackButtonHovered = false
 	
 	init(chatViewManager: ChatViewManager,
 		 threadViewManager: ThreadViewManager) {
@@ -103,14 +104,29 @@ struct ThreadView: View {
 	
 	var body: some View {
 		VStack(alignment: .leading) {
-			Button {
-				withAnimation(.easeInOut(duration: 0.3)) {
-					chatViewManager.toggleThreadView()
+			Image(systemName: "arrow.right")
+				.foregroundColor(buttonDefaultColor)
+				.fontWeight(.semibold)
+				.font(.system(size: 14))
+				.frame(width: 28, height: 28)
+				.background(
+					Circle()
+						.stroke(isBackButtonHovered ? buttonColor : buttonBorderColor.opacity(0.7), lineWidth: 2)
+				)
+				.contentShape(Circle())
+				.onHover { isHovering in
+					isBackButtonHovered = isHovering
 				}
-			} label: {
-				Image(systemName: "arrow.right")
-			}
+				.onTapGesture {
+					withAnimation(.easeInOut(duration: 0.3)) {
+						chatViewManager.toggleThreadView()
+					}
+				}
+			
 			Text(threadViewManager.conversationItem.prompt)
+				.textSelection(.enabled)
+				.font(threadPromptFont)
+				.bold()
 			ConversationsScrollView(chatViewManager: chatViewManager,
 									conversationItems: threadViewManager.threadConversations,
 									highlightedText: $highlightedText,

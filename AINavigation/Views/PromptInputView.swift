@@ -13,12 +13,21 @@ struct PromptInputView: View {
 	@FocusState var isFocused: Bool
 	var disablePromptEntry: Bool
 	var onTapGesture: (() -> Void)? = nil
+	@Environment(\.colorScheme) var colorScheme
+	
+	private var textColor: Color {
+		colorScheme == .dark ? textColorDark : textColorLight
+	}
+	
+	private var inverseTextColor: Color {
+		colorScheme == .dark ? textColorLight : textColorDark
+	}
 	
 	var body: some View {
 		HStack {
 			TextField("Enter your prompt", text: $prompt)
 				.textFieldStyle(.plain)
-				.font(.system(size: 14))
+				.font(normalFont)
 				.onSubmit {
 					if !prompt.isEmpty {
 						sendPrompt(prompt)
@@ -43,10 +52,10 @@ struct PromptInputView: View {
 			}) {
 				Text("Send")
 					.padding(.horizontal)
-					.font(.system(size: 14))
+					.foregroundStyle(inverseTextColor)
+					.font(normalFont)
 					.padding(.vertical, 8)
-					.background(Color.blue)
-					.foregroundColor(.white)
+					.background(buttonColor)
 					.cornerRadius(8)
 			}
 			.buttonStyle(.plain)

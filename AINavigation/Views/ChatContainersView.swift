@@ -69,9 +69,11 @@ struct ChatContainersView: View {
 					ChatsSidebarView(chatContainersManager: chatContainersManager,
 									 showEditModal: $showEditModal)
 					.frame(width: geometry.size.width * 0.2)
-					Divider()
+					.background(Color(hex: "E9E9E9"))
+					
 					if let chatViewManager = chatContainersManager.getSelectedChat() {
 						ChatView(chatViewManager: chatViewManager)
+							.background(Color(hex: "E2E2E2"))
 					}
 				}
 				.environment(\.chatsWidth, geometry.size.width * 0.2)

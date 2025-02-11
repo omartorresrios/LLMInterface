@@ -10,13 +10,19 @@ import SwiftUI
 struct ChatsSidebarView: View {
 	@Bindable var chatContainersManager: ChatContainersManager
 	@Binding var showEditModal: ShowEditModal // remove this if EditChatName is removed
+	@Environment(\.colorScheme) var colorScheme
 	@State private var editingChatId: UUID?
 	@State private var temporaryName: String = ""
 	@FocusState private var isFocused: Bool
 	@State private var forceRerender = false
+	@State private var isEditButtonHovered = false
+	
+	private var textColor: Color {
+		colorScheme == .dark ? textColorDark : textColorLight
+	}
+	
 	var body: some View {
 		ZStack {
-			Color(hex: "F8DEC8")
 			List(chatContainersManager.chatViewManagers, id: \.id) { chatViewManager in
 				HStack {
 					if editingChatId == chatViewManager.id {
@@ -34,7 +40,9 @@ struct ChatsSidebarView: View {
 						.textFieldStyle(.plain)
 					} else {
 						Text(chatViewManager.name)
-							.fontWeight(chatContainersManager.selectedChatContainerId == chatViewManager.id ? .bold : .medium)
+							.font(normalFont)
+							.foregroundStyle(textColor)
+							.fontWeight(chatContainersManager.selectedChatContainerId == chatViewManager.id ? .semibold : .medium)
 							.frame(maxWidth: .infinity, alignment: .leading)
 							.contentShape(Rectangle())
 							.simultaneousGesture(
@@ -52,14 +60,24 @@ struct ChatsSidebarView: View {
 										chatContainersManager.selectedChatContainerId = chatViewManager.id
 									}
 							)
-						Button(action: {
-							//						showEditModal.setValues(true,
-							//												chatContainer.name,
-							//												chatContainer.id)
-						}) {
-							Image(systemName: "pencil")
-								.foregroundColor(.blue)
-						}
+						Image(systemName: "pencil")
+							.foregroundColor(buttonDefaultColor)
+							.fontWeight(.semibold)
+							.font(.system(size: 10))
+							.frame(width: 20, height: 20)
+							.background(
+								Circle()
+									.stroke(isEditButtonHovered ? buttonColor : buttonBorderColor.opacity(0.7), lineWidth: 2)
+							)
+							.contentShape(Circle())
+							.onHover { isHovering in
+								isEditButtonHovered = isHovering
+							}
+							.onTapGesture {
+								//						showEditModal.setValues(true,
+								//												chatContainer.name,
+								//												chatContainer.id)
+							}
 					}
 				}
 				.contentShape(Rectangle())
