@@ -47,34 +47,30 @@ struct ConversationsScrollView: View {
 		}
 	}
 	
+	var promptInputViewAlignment: Alignment {
+		if side == .left {
+			return conversationItems.isEmpty ? .center : .bottom
+		} else {
+			return .bottom
+		}
+	}
+	
 	var body: some View {
-		VStack(alignment: .leading, spacing: 0) {
-			if conversationItems.isEmpty {
-				PromptInputView(sendPrompt: { prompt in
-					if side == .left {
-						chatViewManager.sendPrompt(prompt)
-					} else {
-						sendPrompt?(prompt)
-					}
-				},
-								isFocused: _isFocused,
-								disablePromptEntry: disablePromptEntry)
-				.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: side == .left ? .center : .bottom)
-				.padding(side == .left ? 16 : 0)
-			} else {
+		ZStack(alignment: .bottom) {
+			if !conversationItems.isEmpty {
 				ScrollViewReader { scrollProxy in
 					ScrollView {
 						LazyVStack(alignment: .leading, spacing: 8) {
 							ForEach(filteredItems, id: \.id) { conversationItem in
 								ConversationItemView(chatViewManager: chatViewManager,
-													 conversationItemManager: conversationItemManager(conversationItem.id),
-													 highlightedText: $highlightedText,
-													 disablePromptEntry: $disablePromptEntry,
-													 conversationItem: conversationItem,
-													 isThreadView: isThreadView,
-													 side: side,
-													 removePrompt: removeConversationItem,
-													 scrollToSelectedItem: { id in 
+												   conversationItemManager: conversationItemManager(conversationItem.id),
+												   highlightedText: $highlightedText,
+												   disablePromptEntry: $disablePromptEntry,
+												   conversationItem: conversationItem,
+												   isThreadView: isThreadView,
+												   side: side,
+												   removePrompt: removeConversationItem,
+												   scrollToSelectedItem: { id in
 									scrollToSelectedItem(in: scrollViewProxy, to: id) }
 								)
 								.id(conversationItem.id)
@@ -86,51 +82,55 @@ struct ConversationsScrollView: View {
 						scrollViewProxy = scrollProxy
 					}
 					.overlay(alignment: .bottomTrailing) {
-						Group {
-							if chatViewManager.conversationItemIsAnimating {
-								HStack(spacing: 4) {
-									Text("Press")
-										.font(normalFont)
-										.foregroundStyle(inverseTextColor)
-									
-									Image("enter")
-										.resizable()
-										.renderingMode(.template)
-										.foregroundStyle(inverseTextColor)
-										.fontWeight(.heavy)
-										.aspectRatio(contentMode: .fit)
-										.frame(width: 18, height: 18)
-										.clipped()
-									
-									Text("to get the answer right away")
-										.font(normalFont)
-										.foregroundStyle(inverseTextColor)
-								}
-								.padding(8)
-								.background(buttonColor)
-								.clipShape(RoundedRectangle(cornerRadius: 6.0))
+						if chatViewManager.conversationItemIsAnimating {
+							HStack(spacing: 4) {
+								Text("Press")
+									.font(normalFont)
+									.foregroundStyle(inverseTextColor)
+								
+								Image("enter")
+									.resizable()
+									.renderingMode(.template)
+									.foregroundStyle(inverseTextColor)
+									.fontWeight(.heavy)
+									.aspectRatio(contentMode: .fit)
+									.frame(width: 18, height: 18)
+									.clipped()
+								
+								Text("to get the answer right away")
+									.font(normalFont)
+									.foregroundStyle(inverseTextColor)
 							}
+							.padding(8)
+							.background(buttonColor)
+							.clipShape(RoundedRectangle(cornerRadius: 6.0))
+							.padding(.trailing, side == .left ? 32 : 16)
+							.padding([.bottom, .leading], side == .left ? 16 : 16)
 						}
-						.padding(.trailing, side == .left ? 32 : 16)
-						.padding([.bottom, .leading], side == .left ? 16 : 16)
 					}
 				}
-				PromptInputView(sendPrompt: { prompt in
-					if side == .left {
-						chatViewManager.sendPrompt(prompt)
-					} else {
-						sendPrompt?(prompt)
-					}
-				},
-								isFocused: _isFocused,
-								disablePromptEntry: disablePromptEntry,
-								onTapGesture: {
+			}
+			
+			PromptInputView(sendPrompt: { prompt in
+				if side == .left {
+					chatViewManager.sendPrompt(prompt)
+				} else {
+					sendPrompt?(prompt)
+				}
+			},
+						  isFocused: _isFocused,
+						  disablePromptEntry: disablePromptEntry,
+						  onTapGesture: {
+				if !conversationItems.isEmpty {
 					withAnimation(.easeInOut(duration: 0.3)) {
 						chatViewManager.showThreadView = false
 					}
-				})
-				.padding([.leading, .bottom, .trailing], side == .left ? 16 : 0)
-			}
+				}
+			})
+			.padding([.leading, .bottom, .trailing], side == .left ? 16 : 0)
+			.frame(maxWidth: .infinity)
+			.frame(maxHeight: .infinity, alignment: promptInputViewAlignment)
+			.animation(.easeInOut(duration: 0.3), value: conversationItems.isEmpty)
 		}
 		.onChange(of: disablePromptEntry) { _, newValue in
 			isFocused = !newValue
