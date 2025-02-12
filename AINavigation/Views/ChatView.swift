@@ -53,7 +53,8 @@ struct ChatView: View {
 					if chatViewManager.showThreadView,
 					   let threadManager = chatViewManager.getThreadManager() {
 						ThreadView(chatViewManager: chatViewManager,
-								   threadViewManager: threadManager)
+								   threadViewManager: threadManager,
+								   highlightedText: $highlightedText)
 						.frame(width: geometry.size.width / 2)
 						.environment(\.customWidths, [.right: geometry.size.width / 2])
 						.background(Color(NSColor.windowBackgroundColor))
@@ -76,23 +77,25 @@ struct ChatView: View {
 				.overlay(
 					Group {
 						if chatViewManager.showAIExplanationView {
-							Color.black.opacity(0.3)
-							.edgesIgnoringSafeArea(.all)
-							AIExplainView(subjectToExplainText: highlightedText,
-										  outputText: displayedText,
-										  AIExplainItemIsPending: chatViewManager.AIExplainItem.outputStatus == .pending,
-										  maxWidth: geometry.size.width * 0.5,
-										  maxHeight: geometry.size.height * 0.8,
-										  closeView: closeAIExplainViewAction)
-							.onAppear {
-								startAnimation()
-							}
+							Color.black.opacity(0.2)
+								.edgesIgnoringSafeArea(.all)
+								.transition(.opacity)
+							
+							AIExplainView(
+								subjectToExplainText: highlightedText,
+								outputText: displayedText,
+								AIExplainItemIsPending: chatViewManager.AIExplainItem.outputStatus == .pending,
+								maxWidth: geometry.size.width * 0.5,
+								maxHeight: geometry.size.height * 0.8,
+								closeView: closeAIExplainViewAction)
+							.onAppear { startAnimation() }
 							.onChange(of: chatViewManager.AIExplainItem) { _, _ in
 								startAnimation()
 							}
 						}
-					}, alignment: .center
-				)
+					}
+					.animation(.easeInOut(duration: 0.2), value: chatViewManager.showAIExplanationView)
+				, alignment: .center)
 				
 				if showSidebar && chatViewManager.conversationItems.count > 3 {
 					PromptsSidebarView(conversationItems: chatViewManager.conversationItems,

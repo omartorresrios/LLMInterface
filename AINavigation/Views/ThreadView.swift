@@ -93,13 +93,15 @@ final class ThreadViewManager: Identifiable {
 struct ThreadView: View {
 	@Bindable var chatViewManager: ChatViewManager
 	@Bindable var threadViewManager: ThreadViewManager
-	@State var highlightedText = ""
+	@Binding var highlightedText: String
 	@State private var isBackButtonHovered = false
 	
 	init(chatViewManager: ChatViewManager,
-		 threadViewManager: ThreadViewManager) {
+		 threadViewManager: ThreadViewManager,
+		 highlightedText: Binding<String>) {
 		self.chatViewManager = chatViewManager
 		self.threadViewManager = threadViewManager
+		_highlightedText = highlightedText
 	}
 	
 	var body: some View {
@@ -143,5 +145,6 @@ struct ThreadView: View {
 
 #Preview {
 	ThreadView(chatViewManager: ChatViewManager(),
-			   threadViewManager: ThreadViewManager(conversationItem: ConversationItem.items.first!))
+			   threadViewManager: ThreadViewManager(conversationItem: ConversationItem.items.first!),
+			   highlightedText: .constant(""))
 }

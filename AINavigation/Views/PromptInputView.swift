@@ -14,6 +14,7 @@ struct PromptInputView: View {
 	var disablePromptEntry: Bool
 	var onTapGesture: (() -> Void)? = nil
 	@Environment(\.colorScheme) var colorScheme
+	let side: ViewSide
 	
 	private var textColor: Color {
 		colorScheme == .dark ? textColorDark : textColorLight
@@ -41,7 +42,9 @@ struct PromptInputView: View {
 						.contentShape(Rectangle())
 						.onTapGesture {
 							isFocused = true
-							onTapGesture?()
+							if side == .left {
+								onTapGesture?()
+							}
 						}
 				)
 				.focused($isFocused)
@@ -78,5 +81,6 @@ struct PromptInputView: View {
 
 #Preview {
 	PromptInputView(sendPrompt: { _ in },
-					disablePromptEntry: false)
+					disablePromptEntry: false,
+					side: .left)
 }

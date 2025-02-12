@@ -126,7 +126,8 @@ struct ConversationsScrollView: View {
 						chatViewManager.showThreadView = false
 					}
 				}
-			})
+			},
+							side: side)
 			.padding([.leading, .bottom, .trailing], side == .left ? 16 : 0)
 			.frame(maxWidth: .infinity)
 			.frame(maxHeight: .infinity, alignment: promptInputViewAlignment)
