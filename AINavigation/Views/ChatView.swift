@@ -57,12 +57,12 @@ struct ChatView: View {
 								   highlightedText: $highlightedText)
 						.frame(width: geometry.size.width / 2)
 						.environment(\.customWidths, [.right: geometry.size.width / 2])
-						.background(Color(NSColor.windowBackgroundColor))
+						.background(chatsViewBackgroundColor)
 						.clipShape(RoundedRectangle(cornerRadius: 6.0))
 							.shadow(
 								color: .black.opacity(0.2),
 								radius: 8,
-								x: -4, // Negative x to place shadow on the left
+								x: -4,
 								y: 2
 							)
 							.compositingGroup()

@@ -120,7 +120,7 @@ struct ThreadView: View {
 					isBackButtonHovered = isHovering
 				}
 				.onTapGesture {
-					withAnimation(.easeInOut(duration: 0.3)) {
+					withAnimation(.easeOut(duration: 0.1)) {
 						chatViewManager.toggleThreadView()
 					}
 				}
@@ -139,7 +139,7 @@ struct ThreadView: View {
 				threadViewManager.sendPrompt(prompt)
 			})
 		}
-		.padding()
+		.padding([.leading, .top, .trailing])
 	}
 }
 

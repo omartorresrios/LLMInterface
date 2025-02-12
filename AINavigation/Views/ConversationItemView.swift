@@ -350,7 +350,7 @@ struct ConversationItemView: View {
 					self.isThreadButtonHovered = isHovered
 				}
 				.onTapGesture {
-					withAnimation(.easeInOut(duration: 0.3)) {
+					withAnimation(.easeInOut(duration: 0.1)) {
 						chatViewManager.toggleThreadView()
 						chatViewManager.currentOpenedConversationItemId = conversationItem.id
 						chatViewManager.setThreadManager(for: conversationItem)

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		24537DEF2D5D07E1002CA39D /* ThreadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24537DEE2D5D07E1002CA39D /* ThreadView.swift */; };
 		24538B252D0F1E7A0099DB0E /* ChatContainersManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B242D0F1E7A0099DB0E /* ChatContainersManager.swift */; };
 		24538B282D0F20260099DB0E /* ChatViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B272D0F20260099DB0E /* ChatViewManager.swift */; };
 		24538B2A2D0F205B0099DB0E /* ChatsSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24538B292D0F205B0099DB0E /* ChatsSidebarView.swift */; };
@@ -15,7 +16,6 @@
 		245C17DC2D490DCF0080B7DB /* AIExplainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245C17DB2D490DCF0080B7DB /* AIExplainView.swift */; };
 		246454FB2D15D44300004262 /* EditChatNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246454FA2D15D44300004262 /* EditChatNameView.swift */; };
 		24766F422D425F3900D72CF8 /* DividerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24766F412D425F3900D72CF8 /* DividerView.swift */; };
-		24766F442D45552200D72CF8 /* ThreadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24766F432D45552200D72CF8 /* ThreadView.swift */; };
 		24766F462D45554900D72CF8 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24766F452D45554900D72CF8 /* Helpers.swift */; };
 		249116C92CEA4C21008E6FC6 /* AINavigationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249116C82CEA4C21008E6FC6 /* AINavigationApp.swift */; };
 		249116CD2CEA4C23008E6FC6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 249116CC2CEA4C23008E6FC6 /* Assets.xcassets */; };
@@ -49,6 +49,7 @@
 
 /* Begin PBXFileReference section */
 		24272B622D33EB4B00F0EEFF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		24537DEE2D5D07E1002CA39D /* ThreadView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThreadView.swift; sourceTree = "<group>"; };
 		24538B242D0F1E7A0099DB0E /* ChatContainersManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatContainersManager.swift; sourceTree = "<group>"; };
 		24538B272D0F20260099DB0E /* ChatViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewManager.swift; sourceTree = "<group>"; };
 		24538B292D0F205B0099DB0E /* ChatsSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsSidebarView.swift; sourceTree = "<group>"; };
@@ -57,7 +58,6 @@
 		245C17DB2D490DCF0080B7DB /* AIExplainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIExplainView.swift; sourceTree = "<group>"; };
 		246454FA2D15D44300004262 /* EditChatNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditChatNameView.swift; sourceTree = "<group>"; };
 		24766F412D425F3900D72CF8 /* DividerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DividerView.swift; sourceTree = "<group>"; };
-		24766F432D45552200D72CF8 /* ThreadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadView.swift; sourceTree = "<group>"; };
 		24766F452D45554900D72CF8 /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		249116C52CEA4C21008E6FC6 /* AINavigation.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AINavigation.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		249116C82CEA4C21008E6FC6 /* AINavigationApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AINavigationApp.swift; sourceTree = "<group>"; };
@@ -118,9 +118,9 @@
 				246454FA2D15D44300004262 /* EditChatNameView.swift */,
 				24538B292D0F205B0099DB0E /* ChatsSidebarView.swift */,
 				249CFDD02CF0D29C00C09CAA /* ChatView.swift */,
+				24537DEE2D5D07E1002CA39D /* ThreadView.swift */,
 				249CFDD62CF0D37D00C09CAA /* ConversationItemView.swift */,
 				24766F412D425F3900D72CF8 /* DividerView.swift */,
-				24766F432D45552200D72CF8 /* ThreadView.swift */,
 				245C17D72D4685520080B7DB /* ConversationsScrollView.swift */,
 				245C17D92D46AA3C0080B7DB /* PromptInputView.swift */,
 				245C17DB2D490DCF0080B7DB /* AIExplainView.swift */,
@@ -336,12 +336,12 @@
 				249CFDCC2CF0CD3200C09CAA /* ChatContainersView.swift in Sources */,
 				249CFDD72CF0D37D00C09CAA /* ConversationItemView.swift in Sources */,
 				249CFDD52CF0D31000C09CAA /* ConversationItem.swift in Sources */,
-				24766F442D45552200D72CF8 /* ThreadView.swift in Sources */,
 				24538B2A2D0F205B0099DB0E /* ChatsSidebarView.swift in Sources */,
 				249F72812D32BF8000AC7169 /* ConversationItemViewManager.swift in Sources */,
 				24538B282D0F20260099DB0E /* ChatViewManager.swift in Sources */,
 				24766F462D45554900D72CF8 /* Helpers.swift in Sources */,
 				249116C92CEA4C21008E6FC6 /* AINavigationApp.swift in Sources */,
+				24537DEF2D5D07E1002CA39D /* ThreadView.swift in Sources */,
 				249CFDD12CF0D29C00C09CAA /* ChatView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

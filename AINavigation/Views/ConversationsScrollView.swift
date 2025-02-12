@@ -18,6 +18,7 @@ struct ConversationsScrollView: View {
 	let side: ViewSide
 	var sendPrompt: ((String) -> Void)?
 	@Environment(\.colorScheme) var colorScheme
+	@State private var promptInputHeight: CGFloat = 0
 	
 	init(chatViewManager: ChatViewManager,
 		 conversationItems: [ConversationItem],
@@ -77,6 +78,7 @@ struct ConversationsScrollView: View {
 							}
 						}
 						.padding([.leading, .top, .trailing], side == .left ? 16 : 0)
+						.padding(.bottom, promptInputHeight + 16)
 					}
 					.onAppear {
 						scrollViewProxy = scrollProxy
@@ -127,8 +129,23 @@ struct ConversationsScrollView: View {
 					}
 				}
 			},
-							side: side)
-			.padding([.leading, .bottom, .trailing], side == .left ? 16 : 0)
+							side: side, 
+							noItems: conversationItems.isEmpty)
+			.background(
+				Color.clear
+					.overlay(
+						GeometryReader { geo in
+							Color.clear
+								.onAppear {
+									promptInputHeight = geo.size.height
+								}
+								.onChange(of: geo.size.height) { _, newHeight in
+									promptInputHeight = newHeight
+								}
+						}
+					)
+			)
+			.padding([.leading, .trailing], side == .left ? 16 : 0)
 			.frame(maxWidth: .infinity)
 			.frame(maxHeight: .infinity, alignment: promptInputViewAlignment)
 			.animation(.easeInOut(duration: 0.3), value: conversationItems.isEmpty)

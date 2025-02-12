@@ -15,6 +15,7 @@ struct PromptInputView: View {
 	var onTapGesture: (() -> Void)? = nil
 	@Environment(\.colorScheme) var colorScheme
 	let side: ViewSide
+	let noItems: Bool
 	
 	private var textColor: Color {
 		colorScheme == .dark ? textColorDark : textColorLight
@@ -22,6 +23,22 @@ struct PromptInputView: View {
 	
 	private var inverseTextColor: Color {
 		colorScheme == .dark ? textColorLight : textColorDark
+	}
+	
+	private var clipShape: AnyShape {
+		if side == .left {
+			return noItems ? AnyShape(RoundedRectangle(cornerRadius: 8.0)) : AnyShape(RoundedCorners(topLeft: 8, topRight: 8))
+		} else {
+			return AnyShape(RoundedCorners(topLeft: 8, topRight: 8))
+		}
+	}
+	
+	private var overlay: some View {
+		let shape: AnyShape = side == .left
+			? (noItems ? AnyShape(RoundedRectangle(cornerRadius: 8)) : AnyShape(RoundedCorners(topLeft: 8, topRight: 8)))
+			: AnyShape(RoundedCorners(topLeft: 8, topRight: 8))
+		
+		return shape.stroke(Color.gray, lineWidth: 0.5) // Apply stroke here
 	}
 	
 	var body: some View {
@@ -65,11 +82,9 @@ struct PromptInputView: View {
 			.disabled(prompt.isEmpty)
 		}
 		.padding()
-		.cornerRadius(8)
-		.overlay(
-			RoundedRectangle(cornerRadius: 8)
-				.stroke(Color.gray, lineWidth: 0.5)
-		)
+		.background()
+		.clipShape(clipShape)
+		.overlay(overlay)
 		.disabled(disablePromptEntry)
 		.onAppear {
 			DispatchQueue.main.async {
@@ -79,8 +94,43 @@ struct PromptInputView: View {
 	}
 }
 
+struct RoundedCorners: Shape {
+	var topLeft: CGFloat = 0
+	var topRight: CGFloat = 0
+
+	func path(in rect: CGRect) -> Path {
+		var path = Path()
+
+		let tl = min(topLeft, rect.height / 2)
+		let tr = min(topRight, rect.height / 2)
+
+		path.move(to: CGPoint(x: 0, y: rect.height)) // Bottom-left corner
+		path.addLine(to: CGPoint(x: 0, y: tl)) // Left edge
+		path.addArc(
+			center: CGPoint(x: tl, y: tl),
+			radius: tl,
+			startAngle: .degrees(180),
+			endAngle: .degrees(270),
+			clockwise: false
+		) // Top-left corner
+		path.addLine(to: CGPoint(x: rect.width - tr, y: 0)) // Top edge
+		path.addArc(
+			center: CGPoint(x: rect.width - tr, y: tr),
+			radius: tr,
+			startAngle: .degrees(270),
+			endAngle: .degrees(0),
+			clockwise: false
+		) // Top-right corner
+		path.addLine(to: CGPoint(x: rect.width, y: rect.height)) // Right edge
+		path.closeSubpath()
+
+		return path
+	}
+}
+
 #Preview {
 	PromptInputView(sendPrompt: { _ in },
 					disablePromptEntry: false,
-					side: .left)
+					side: .right,
+					noItems: false)
 }
