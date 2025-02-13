@@ -266,6 +266,8 @@ struct ConversationItemView: View {
 			.padding(.horizontal)
 			.background(conversationItemBackgroundColor)
 			.clipShape(RoundedRectangle(cornerRadius: 8.0))
+			.animation(.spring(duration: 0.2),
+					   value: conversationItemManager.isExpanded)
 			.onChange(of: conversationItem.output) { oldValue, newValue in
 				if !conversationItemManager.hasAnimatedOnce {
 					startAnimation()
@@ -321,7 +323,9 @@ struct ConversationItemView: View {
 				.bold()
 			if hasMoreThanTwoLines && !isAnimating {
 				Button {
-					conversationItemManager.toggleIsExpanded()
+					withAnimation(.spring(duration: 0.2)) {
+						conversationItemManager.toggleIsExpanded()
+					}
 				} label: {
 					Text(conversationItemManager.isExpanded ? "Collapse" : "Show more")
 						.font(.footnote)
