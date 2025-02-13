@@ -43,9 +43,10 @@ struct PromptInputView: View {
 	
 	var body: some View {
 		HStack {
-			TextField("Enter your prompt", text: $prompt)
+			TextField("Enter your prompt", text: $prompt, axis: .vertical)
 				.textFieldStyle(.plain)
 				.font(normalFont)
+				.lineLimit(12)
 				.onSubmit {
 					if !prompt.isEmpty {
 						sendPrompt(prompt)
@@ -70,13 +71,10 @@ struct PromptInputView: View {
 				sendPrompt(prompt)
 				prompt = ""
 			}) {
-				Text("Send")
-					.padding(.horizontal)
-					.foregroundStyle(inverseTextColor)
-					.font(normalFont)
-					.padding(.vertical, 8)
-					.background(buttonColor)
-					.cornerRadius(8)
+				Image(systemName: "paperplane.circle.fill")
+					.resizable()
+					.foregroundStyle(buttonColor)
+					.frame(width: 30, height: 30)
 			}
 			.buttonStyle(.plain)
 			.disabled(prompt.isEmpty)

@@ -18,7 +18,7 @@ final class ChatViewManager: Identifiable {
 	var conversationItemManagers: [String: ConversationItemViewManager] = [:]
 	var searchText = ""
 	var selectedPromptIndex: Int?
-	var conversationItemIsAnimating = false
+	private(set) var animatingViewSide: ViewSide?
 	var showAIExplanationView = false
 	var showThreadView = false
 	var currentSelectedConversationItemId: String?
@@ -173,5 +173,17 @@ final class ChatViewManager: Identifiable {
 		for tv in textViews where tv != textView {
 			tv.setSelectedRange(NSRange(location: 0, length: 0))
 		}
+	}
+	
+	func startAnimation(for side: ViewSide) {
+		animatingViewSide = side
+	}
+	
+	func isAnimating(side: ViewSide) -> Bool {
+		return animatingViewSide == side
+	}
+	
+	func stopAnimation() {
+		animatingViewSide = nil
 	}
 }

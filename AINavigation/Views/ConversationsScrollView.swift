@@ -83,20 +83,17 @@ struct ConversationsScrollView: View {
 					.onAppear {
 						scrollViewProxy = scrollProxy
 					}
-					.overlay(alignment: .bottomTrailing) {
-						if chatViewManager.conversationItemIsAnimating {
+					.overlay(alignment: .bottom) {
+						if chatViewManager.isAnimating(side: side) {
 							HStack(spacing: 4) {
 								Text("Press")
 									.font(normalFont)
 									.foregroundStyle(inverseTextColor)
 								
 								Image("enter")
-									.resizable()
 									.renderingMode(.template)
 									.foregroundStyle(inverseTextColor)
-									.fontWeight(.heavy)
-									.aspectRatio(contentMode: .fit)
-									.frame(width: 18, height: 18)
+									.frame(width: 22, height: 22)
 									.clipped()
 								
 								Text("to get the answer right away")
@@ -105,9 +102,8 @@ struct ConversationsScrollView: View {
 							}
 							.padding(8)
 							.background(buttonColor)
-							.clipShape(RoundedRectangle(cornerRadius: 6.0))
-							.padding(.trailing, side == .left ? 32 : 16)
-							.padding([.bottom, .leading], side == .left ? 16 : 16)
+							.clipShape(RoundedCorners(topLeft: 8, topRight: 8))
+							.padding(.bottom, promptInputHeight)
 						}
 					}
 				}

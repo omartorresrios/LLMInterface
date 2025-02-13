@@ -261,6 +261,8 @@ struct ConversationItemView: View {
 					ProgressView()
 						.padding(.bottom)
 				}
+				bottomButtonsView
+					.padding(.bottom)
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
 			.padding(.horizontal)
@@ -302,7 +304,9 @@ struct ConversationItemView: View {
 			disablePromptEntry = newValue
 		}
 		.onChange(of: isAnimating) { _, newValue in
-			chatViewManager.conversationItemIsAnimating = newValue && hasMoreThanTwoLines
+			if newValue && hasMoreThanTwoLines {
+				chatViewManager.startAnimation(for: side)
+			}
 		}
 	}
 	
@@ -316,24 +320,30 @@ struct ConversationItemView: View {
 	}
 
 	private var topButtonsView: some View {
-		HStack {
-			Text(conversationItem.prompt)
-				.textSelection(.enabled)
-				.font(promptFont)
-				.bold()
+		HStack(alignment: .firstTextBaseline, spacing: 8) {
 			if hasMoreThanTwoLines && !isAnimating {
 				Button {
 					withAnimation(.spring(duration: 0.2)) {
 						conversationItemManager.toggleIsExpanded()
 					}
 				} label: {
-					Text(conversationItemManager.isExpanded ? "Collapse" : "Show more")
-						.font(.footnote)
-						.foregroundColor(.blue)
+					Image(systemName: "triangle.fill")
+						.rotationEffect(.degrees(conversationItemManager.isExpanded ? 180 : 90))
 				}
+				.buttonStyle(.plain)
 			}
-			Spacer()
-			if !isThreadView {
+			Text(conversationItem.prompt)
+				.textSelection(.enabled)
+				.font(promptFont)
+				.bold()
+		}
+		.disabled(disableWhileActions)
+	}
+	
+	@ViewBuilder
+	private var bottomButtonsView: some View {
+		if !isThreadView {
+			HStack {
 				HStack(spacing: 4) {
 					Image(systemName: "arrow.triangle.branch")
 						.foregroundColor(buttonDefaultColor)
@@ -388,7 +398,6 @@ struct ConversationItemView: View {
 					}
 			}
 		}
-		.disabled(disableWhileActions)
 	}
 	
 	private var textEditorView: some View {
@@ -469,6 +478,7 @@ struct ConversationItemView: View {
 			guard currentIndex < fullOutput.count else {
 				timer.invalidate()
 				isAnimating = false
+				chatViewManager.stopAnimation()
 				return
 			}
 			let index = fullOutput.index(fullOutput.startIndex, offsetBy: currentIndex)
@@ -483,7 +493,7 @@ struct ConversationItemView: View {
 		displayedText = fullOutput
 		currentIndex = fullOutput.count
 		isAnimating = false
-		chatViewManager.conversationItemIsAnimating = false
+		chatViewManager.stopAnimation()
 	}
 	
 	private func countLines(in string: String, width: CGFloat, font: NSFont) -> Int {
