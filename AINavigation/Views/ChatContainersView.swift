@@ -14,24 +14,25 @@ struct SearchField: View {
 	var body: some View {
 		HStack(spacing: 4) {
 			Image(systemName: "magnifyingglass")
-				.foregroundColor(.gray)
+				.foregroundColor(buttonDefaultColor)
 			
 			TextField("Search...", text: $searchText)
 				.textFieldStyle(.plain)
-				.font(.system(size: 14))
+				.font(normalFont)
+				.foregroundStyle(textColorLight)
 			
 			if !searchText.isEmpty {
 				Button(action: { searchText = "" }) {
 					Image(systemName: "xmark.circle.fill")
-						.foregroundColor(.gray)
+						.foregroundColor(buttonDefaultColor)
 				}
-				.buttonStyle(PlainButtonStyle())
+				.buttonStyle(.plain)
 			}
 		}
 		.padding(6)
 		.overlay(
 			RoundedRectangle(cornerRadius: 8)
-				.stroke(Color.gray, lineWidth: 0.5)
+				.stroke(buttonDefaultColor, lineWidth: 0.5)
 		)
 	}
 }

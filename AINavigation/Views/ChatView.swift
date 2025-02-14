@@ -26,13 +26,11 @@ struct ChatView: View {
 				ZStack(alignment: .trailing) {
 					VStack(alignment: .leading, spacing: 0) {
 						if chatViewManager.conversationItems.count > 3 {
-							withAnimation {
-								SearchField(searchText: $chatViewManager.searchText)
-									.padding(.horizontal)
-									.padding(.top)
-									.padding(.bottom, 8)
-									.frame(maxWidth: (geometry.size.width * 0.8) / 2)
-							}
+							SearchField(searchText: $chatViewManager.searchText)
+								.padding([.horizontal, .top])
+								.frame(maxWidth: .infinity)
+								.animation(.easeIn(duration: 0.2),
+										   value: chatViewManager.conversationItems.count > 1)
 						}
 						
 						ConversationsScrollView(chatViewManager: chatViewManager,
@@ -49,7 +47,9 @@ struct ChatView: View {
 							}
 						}
 					}
-				
+					.animation(.easeIn(duration: 0.2),
+							   value: chatViewManager.conversationItems.count > 1)
+					
 					if chatViewManager.showThreadView,
 					   let threadManager = chatViewManager.getThreadManager() {
 						ThreadView(chatViewManager: chatViewManager,

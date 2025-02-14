@@ -347,9 +347,9 @@ struct ConversationItemView: View {
 		}
 	}
 	
-	func setupKeyboardMonitor() {
+	private func setupKeyboardMonitor() {
 		NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-			if event.keyCode == 36 && isAnimating {
+			if event.keyCode == 36 && chatViewManager.isAnimating(side: side) {
 				stopAnimation()
 			}
 			return event
