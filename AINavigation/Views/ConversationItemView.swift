@@ -122,21 +122,33 @@ struct TextEditor: NSViewRepresentable {
 	}
 	
 	private func renderMarkdown(_ markdown: String) -> NSAttributedString {
-		let attributedString = NSMutableAttributedString(string: "")
+		let attributedString = NSMutableAttributedString()
 
 		let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false)
+		var isFirstLine = true
+		
 		for line in lines {
-			if line.starts(with: "# ") {
-				let headerText = String(line.dropFirst(2))
+			if !isFirstLine {
+				attributedString.append(NSAttributedString(string: "\n"))
+			}
+			isFirstLine = false
+			
+			let lineStr = String(line)
+			if lineStr.isEmpty {
+				continue
+			}
+			
+			if lineStr.starts(with: "# ") {
+				let headerText = String(lineStr.dropFirst(2))
 				let header = NSAttributedString(
-					string: "\(headerText)\n",
+					string: headerText,
 					attributes: [
 						.font: headerTextFont ?? .systemFont(ofSize: 24, weight: .bold)
 					]
 				)
 				attributedString.append(header)
-			} else if line.starts(with: "## ") {
-				let subHeaderText = String(line.dropFirst(3))
+			} else if lineStr.starts(with: "## ") {
+				let subHeaderText = String(lineStr.dropFirst(3))
 				let subHeader = NSAttributedString(
 					string: "\(subHeaderText)\n",
 					attributes: [
@@ -144,8 +156,8 @@ struct TextEditor: NSViewRepresentable {
 					]
 				)
 				attributedString.append(subHeader)
-			} else if line.starts(with: "- ") {
-				let bulletPointText = String(line.dropFirst(2))
+			} else if lineStr.starts(with: "- ") {
+				let bulletPointText = String(lineStr.dropFirst(2))
 				let bulletPoint = NSAttributedString(
 					string: "• \(bulletPointText)\n",
 					attributes: [
@@ -155,10 +167,8 @@ struct TextEditor: NSViewRepresentable {
 				attributedString.append(bulletPoint)
 			} else {
 				// Regular text
-				let paragraph = applyBoldStyle(to: String(line))
+				let paragraph = applyBoldStyle(to: lineStr)
 				attributedString.append(paragraph)
-				attributedString.append(NSAttributedString(string: "\n", attributes: [
-					.font: outputFont ?? .systemFont(ofSize: 15)]))
 			}
 		}
 
@@ -215,6 +225,7 @@ struct ConversationItemView: View {
 	@Environment(\.colorScheme) var colorScheme
 	@State private var isThreadButtonHovered = false
 	@State private var isTrashButtonHovered = false
+	@State var isIconAnimating = false
 	
 	private var textColor: Color {
 		colorScheme == .dark ? textColorDark : textColorLight
@@ -252,15 +263,39 @@ struct ConversationItemView: View {
 	
 	var body: some View {
 		ZStack {
-			VStack(alignment: .leading) {
+			VStack(alignment: .leading, spacing: 8) {
 				topButtonsView
 					.padding(.top)
+				
 				if conversationItem.outputStatus == .completed {
 					textEditorView
 				} else {
-					ProgressView()
-						.padding(.bottom)
+					Image(systemName: "circle.hexagongrid")
+						.font(.system(size: 15))
+						.foregroundColor(buttonColor)
+						.rotationEffect(.degrees(isIconAnimating ? 360 : 0))
+						.animation(
+							.linear(duration: 2.0)
+								.repeatForever(autoreverses: false),
+							value: isIconAnimating
+						)
+						.scaleEffect(isIconAnimating ? 1.3 : 1)
+						.animation(
+							.easeInOut(duration: 1)
+								.repeatForever(autoreverses: true),
+							value: isIconAnimating
+						)
+						.onAppear {
+							DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+								isIconAnimating = true
+							}
+						}
+						.transition(.asymmetric(
+							insertion: .opacity.combined(with: .scale(scale: 1.0)),
+							removal: .opacity.combined(with: .scale(scale: 0.8))
+						))
 				}
+				
 				bottomButtonsView
 					.padding(.bottom)
 			}
@@ -270,6 +305,8 @@ struct ConversationItemView: View {
 			.clipShape(RoundedRectangle(cornerRadius: 8.0))
 			.animation(.spring(duration: 0.2),
 					   value: conversationItemManager.isExpanded)
+			.animation(.easeInOut(duration: 0.3), 
+					   value: conversationItem.outputStatus)
 			.onChange(of: conversationItem.output) { oldValue, newValue in
 				if !conversationItemManager.hasAnimatedOnce {
 					startAnimation()
@@ -331,12 +368,17 @@ struct ConversationItemView: View {
 						.rotationEffect(.degrees(conversationItemManager.isExpanded ? 180 : 90))
 				}
 				.buttonStyle(.plain)
+				.transition(.opacity.combined(with: .scale))
+				.animation(.easeInOut(duration: 0.2), 
+						   value: hasMoreThanTwoLines && !isAnimating)
 			}
 			Text(conversationItem.prompt)
 				.textSelection(.enabled)
 				.font(promptFont)
 				.bold()
+				.animation(.none, value: hasMoreThanTwoLines && !isAnimating)
 		}
+		.animation(.easeIn, value: hasMoreThanTwoLines && !isAnimating)
 		.disabled(disableWhileActions)
 	}
 	
